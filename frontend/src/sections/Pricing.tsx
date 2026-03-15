@@ -85,7 +85,7 @@ const Pricing = ({ user, onPlanClick }: PricingProps) => {
         'Priority support',
         'Aura-prefixed custom links',
       ],
-      cta: 'Start free trial',
+      cta: 'Subscribe',
       highlighted: true,
     },
     {
@@ -103,7 +103,7 @@ const Pricing = ({ user, onPlanClick }: PricingProps) => {
         'Admin controls',
         'SSO integration',
       ],
-      cta: 'Contact sales',
+      cta: 'Subscribe',
       highlighted: false,
     },
   ];
