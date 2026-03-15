@@ -1,6 +1,6 @@
 # ✨ Aura Tree
 
-![Aura Tree Banner](https://raw.githubusercontent.com/Bobmatrix1/AuraTree/main/public/aura%20tree%20logo.png)
+![Aura Tree Banner](./frontend/public/aura%20tree%20logo.png)
 
 > **Elevate your online presence with a link-in-bio platform that actually feels like you.**
 
