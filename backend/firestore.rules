@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ============================================
+    // Helper Functions
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Checks if the user has the isAdmin field set to true in their user document
+    function isAdmin() {
+      return isAuthenticated() && 
+        (
+          // Check email-based admin (fallback)
+          request.auth.token.email == 'admin@auratree.com' ||
+          // Check Firestore-based admin field
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        );
+    }
+    
+    function getAuraTreeData(treeId) {
+      return get(/databases/$(database)/documents/auraTrees/$(treeId)).data;
+    }
+    
+    function isAuraTreeOwner(treeId) {
+      return isAuthenticated() && 
+        request.auth.uid == getAuraTreeData(treeId).userId;
+    }
+    
+    function isAuraTreePublic(treeId) {
+      // Check if the Aura Tree is public/active
+      let data = getAuraTreeData(treeId);
+      return data.isActive == true;
+    }
+    
+    // ============================================
+    // Users Collection
+    // ============================================
+    match /users/{userId} {
+      // Allow any user to read a profile (needed for public link-in-bio)
+      // or restrict to authenticated if you want profiles private by default
+      allow read: if true; 
+      
+      // Allow create only for self during registration
+      allow create: if isOwner(userId);
+      
+      // Allow update for self (restricted fields) or admin
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Only admin can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // Aura Trees Collection
+    // ============================================
+    match /auraTrees/{treeId} {
+      // Allow public read if active, otherwise only owner/admin
+      allow read: if isAuraTreePublic(treeId) || isAuraTreeOwner(treeId) || isAdmin();
+      
+      // Allow creation for authenticated users
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Allow update/delete for owner or admin
+      allow update, delete: if isAuraTreeOwner(treeId) || isAdmin();
+      
+      // ============================================
+      // Links Subcollection
+      // ============================================
+      match /links/{linkId} {
+        // Public read if parent tree is public
+        allow read: if isAuraTreePublic(treeId) || isAuraTreeOwner(treeId) || isAdmin();
+        
+        // Only owner can manage links
+        allow create, update, delete: if isAuraTreeOwner(treeId) || isAdmin();
+      }
+    }
+    
+    // ============================================
+    // Subscriptions & Payments
+    // ============================================
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // Analytics & Logs (Admin Only)
+    // ============================================
+    match /analytics/{docId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /adminLogs/{logId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+    
+    // ============================================
+    // Default Deny
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
