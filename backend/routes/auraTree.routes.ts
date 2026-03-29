@@ -6,6 +6,8 @@ import { Router } from 'express';
 import { body, param } from 'express-validator';
 import {
   createAuraTree,
+  listMyAuraTrees,
+  getAuraTreeById,
   getAuraTreeBySlug,
   getMyAuraTree,
   updateAuraTree,
@@ -23,21 +25,6 @@ const router = Router();
 
 // Validation middleware
 const createValidation = [
-  body('slug')
-    .optional()
-    .trim()
-    .matches(/^[a-z0-9-]{3,50}$/)
-    .withMessage('Slug must be 3-50 lowercase alphanumeric characters with hyphens'),
-  body('displayName')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Display name must be less than 100 characters'),
-  body('bio')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('Bio must be less than 500 characters'),
   handleValidationErrors,
 ];
 
@@ -77,7 +64,9 @@ router.get('/public/:slug', optionalAuth, slugParamValidation, getAuraTreeBySlug
 
 // Protected routes
 router.post('/', verifyToken, createValidation, createAuraTree);
+router.get('/list', verifyToken, listMyAuraTrees);
 router.get('/me', verifyToken, getMyAuraTree);
+router.get('/:id', verifyToken, idParamValidation, getAuraTreeById);
 router.put('/:id', verifyToken, idParamValidation, updateValidation, updateAuraTree);
 router.put('/:id/slug', verifyToken, idParamValidation, slugValidation, updateSlug);
 router.post('/:id/background', verifyToken, idParamValidation, uploadSingleImage('background'), uploadBackground);

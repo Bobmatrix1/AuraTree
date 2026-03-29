@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
+import { API_BASE_URL } from '../config/api';
 
 interface NavigationProps {
   user: FirebaseUser | null;
@@ -146,7 +147,7 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
                 <div className="flex items-center gap-4">
                   {isAdmin && (
                     <a 
-                      href="http://localhost:5000/admin" 
+                      href={`${API_BASE_URL}/admin`} 
                       className="flex items-center gap-2 text-sm text-aura-cyan hover:text-aura-cyan/80 transition-colors"
                       title="Admin Panel"
                     >
@@ -269,12 +270,11 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
             {user ? (
               <>
                 {isAdmin && (
-                  <a 
-                    href="http://localhost:5000/admin" 
+                  <a
+                    href={`${API_BASE_URL}/admin`}
                     className="w-full text-center py-4 px-8 text-lg font-semibold flex items-center justify-center gap-2 text-aura-cyan bg-white/5 border border-aura-cyan/20 rounded-xl"
                     onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Shield className="w-5 h-5" />
+                  >                    <Shield className="w-5 h-5" />
                     Admin Panel
                   </a>
                 )}

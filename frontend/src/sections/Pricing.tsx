@@ -5,6 +5,7 @@ import { Check, Zap, Users, Sparkles, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { Link } from 'react-router-dom';
+import { API_V1_URL } from '../config/api';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,8 +24,7 @@ const Pricing = ({ user, onPlanClick }: PricingProps) => {
   useEffect(() => {
     const fetchPrices = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${apiUrl}/api/v1/system/settings`);
+        const response = await fetch(`${API_V1_URL}/system/settings`);
         const data = await response.json();
         if (data.success) {
           setPrices({

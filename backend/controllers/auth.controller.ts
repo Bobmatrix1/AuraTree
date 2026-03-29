@@ -16,7 +16,7 @@ import { getSystemSettings } from '../utils/systemConfig';
  * POST /auth/register
  */
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password, displayName } = req.body;
+  const { email, password, displayName, referredBy } = req.body;
 
   // 1. Check if registration is globally enabled
   const settings = await getSystemSettings();
@@ -77,9 +77,45 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
       status: 'active',
       expiresAt: null,
     },
+    referredBy: referredBy || null,
   };
 
   await db.collection('users').doc(userRecord.uid).set(userData);
+
+  // If referredBy exists, record the referral
+  if (referredBy) {
+    // Find affiliate by referral code
+    try {
+      const affiliateSnapshot = await db.collection('affiliates')
+        .where('referralCode', '==', referredBy)
+        .limit(1)
+        .get();
+
+      if (!affiliateSnapshot.empty) {
+        const affiliateDoc = affiliateSnapshot.docs[0];
+        const affiliateId = affiliateDoc.id;
+
+        // Check for self-referral
+        if (affiliateId !== userRecord.uid) {
+          await db.collection('affiliateReferrals').add({
+            affiliateId,
+            referredUserId: userRecord.uid,
+            createdAt: new Date().toISOString(),
+          });
+
+          // Update affiliate signups count
+          const currentStats = affiliateDoc.data().stats || {};
+          await affiliateDoc.ref.update({
+            'stats.signups': (currentStats.signups || 0) + 1,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error tracking referral:', error);
+      // Don't fail registration if referral tracking fails
+    }
+  }
 
   // Generate JWT token
   const token = jwt.sign(

@@ -171,6 +171,16 @@ function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Referral Tracking
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('referred_by', ref);
+      console.log('Referral tracked:', ref);
+    }
+  }, []);
+
   // Global Scroll Reset on Route Change
   useEffect(() => {
     const resetScroll = () => {

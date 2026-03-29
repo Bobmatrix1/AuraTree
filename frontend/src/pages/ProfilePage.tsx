@@ -16,8 +16,9 @@ import {
   SiVsco, SiZoom, SiCanva, SiBento
 } from 'react-icons/si';
 import { FaSkype } from 'react-icons/fa6';
-import { Link as LucideLinkIcon, Sparkles, Loader2 } from 'lucide-react';
+import { Link as LucideLinkIcon, Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { API_V1_URL } from '../config/api';
 
 const getPlatformDetails = (platform: string) => {
   const details: { [key: string]: { icon: any, color: string } } = {
@@ -94,7 +95,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/v1/auratree/public/${slug}`);
+        const response = await fetch(`${API_V1_URL}/auratree/public/${slug}`);
         const result = await response.json();
         if (result.success) {
           setData(result.data);
@@ -113,7 +114,7 @@ const ProfilePage = () => {
 
   const handleLinkClick = async (linkId: string, url: string) => {
     // Fire and forget tracking
-    fetch(`http://localhost:5000/api/v1/links/${linkId}/click`, {
+    fetch(`${API_V1_URL}/links/${linkId}/click`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ auraTreeId: data.id })
@@ -203,23 +204,26 @@ const ProfilePage = () => {
         </div>
 
         {/* Footer */}
-        <footer className="mt-20 flex flex-col items-center gap-6 pb-8">
-          <div className="flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity cursor-default">
-            <Sparkles className="w-4 h-4 text-aura-violet" />
-            <span className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.3em] text-white">Created with Aura Tree</span>
+        <footer className="mt-20 flex flex-col items-center gap-4 pb-12">
+          <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity duration-300 cursor-default">
+            <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
+              <img src="/aura%20tree%20logo.png" className="w-full h-full object-contain scale-[2.8] invert dark:invert-0" alt="Aura Tree" />
+            </div>
+            <span className="text-[9px] lg:text-[10px] font-bold uppercase tracking-[0.3em] text-white">Created with Aura Tree</span>
           </div>
           
           <button 
             onClick={() => window.location.href = '/'} 
-            className="group relative flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-aura-violet/50 py-3.5 px-8 rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(123,97,255,0.2)] active:scale-95"
+            className="group relative flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-aura-violet/50 py-3.5 px-8 sm:px-10 rounded-full transition-all duration-300 hover:shadow-[0_0_30px_rgba(123,97,255,0.3)] active:scale-95 overflow-hidden"
           >
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-aura-violet to-aura-cyan flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-              <Sparkles className="w-3 h-3 text-white" />
+            <div className="w-8 h-8 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <img src="/aura%20tree%20logo.png" className="w-full h-full object-contain scale-[4.5] invert dark:invert-0" alt="" />
             </div>
-            <span className="text-xs lg:text-sm font-bold text-aura-text group-hover:text-aura-violet transition-colors uppercase tracking-widest">
+            <span className="text-xs lg:text-sm font-bold text-aura-text group-hover:text-aura-violet transition-colors uppercase tracking-widest relative z-10 whitespace-nowrap">
               Create your own aura link
             </span>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-aura-violet/0 via-aura-violet/5 to-aura-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* Glow Hover Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-aura-violet/0 via-aura-violet/10 to-aura-cyan/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </button>
         </footer>
       </div>

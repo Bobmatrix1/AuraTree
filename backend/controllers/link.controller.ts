@@ -8,6 +8,7 @@ import { db, fieldValue } from '../config/firebase';
 import { asyncHandler, Errors } from '../middlewares/error.middleware';
 import { detectPlatform, extractTitleFromUrl, isValidUrl } from '../utils/detectPlatform';
 import { getSystemSettings } from '../utils/systemConfig';
+import { updateAuraScore } from '../utils/auraScore';
 
 /**
  * Add a new link to Aura Tree
@@ -111,6 +112,9 @@ export const addLink = asyncHandler(async (req: Request, res: Response) => {
     updatedAt: new Date().toISOString(),
   });
 
+  // Update Aura Score
+  await updateAuraScore(auraTreeId).catch(console.error);
+
   res.status(201).json({
     success: true,
     message: 'Link added successfully',
@@ -145,8 +149,7 @@ export const getLinks = asyncHandler(async (req: Request, res: Response) => {
   let query = db
     .collection('auraTrees')
     .doc(auraTreeId)
-    .collection('links')
-    .orderBy('order', 'asc');
+    .collection('links');
 
   // Only show visible links for non-owners
   if (!isOwner) {
@@ -155,10 +158,13 @@ export const getLinks = asyncHandler(async (req: Request, res: Response) => {
 
   const linksSnapshot = await query.get();
 
-  const links = linksSnapshot.docs.map((doc) => ({
+  let links = linksSnapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   }));
+
+  // Sort in memory by order asc
+  links.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
 
   res.status(200).json({
     success: true,
@@ -254,6 +260,9 @@ export const updateLink = asyncHandler(async (req: Request, res: Response) => {
     updatedAt: new Date().toISOString(),
   });
 
+  // Update Aura Score
+  await updateAuraScore(auraTreeId).catch(console.error);
+
   res.status(200).json({
     success: true,
     message: 'Link updated successfully',
@@ -304,6 +313,9 @@ export const deleteLink = asyncHandler(async (req: Request, res: Response) => {
   await db.collection('auraTrees').doc(auraTreeId).update({
     updatedAt: new Date().toISOString(),
   });
+
+  // Update Aura Score
+  await updateAuraScore(auraTreeId).catch(console.error);
 
   res.status(200).json({
     success: true,
@@ -398,23 +410,47 @@ export const trackClick = asyncHandler(async (req: Request, res: Response) => {
     throw Errors.NotFound('Link not found');
   }
 
-  // Increment click count (async, don't wait)
-  db.collection('auraTrees')
-    .doc(auraTreeId)
-    .collection('links')
-    .doc(linkId)
-    .update({
-      clickCount: fieldValue.increment(1),
-    })
-    .catch(console.error);
+  // 3. Unique Click Tracking (IP-based)
+  const clickerIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const ipString = Array.isArray(clickerIp) ? clickerIp[0] : (clickerIp || 'unknown');
+  const sanitizedIp = ipString.replace(/[^a-zA-Z0-9]/g, '_');
+  const uniqueClickId = `${linkId}_${sanitizedIp}`;
 
-  // Increment Aura Tree click count
-  db.collection('auraTrees')
-    .doc(auraTreeId)
-    .update({
-      clickCount: fieldValue.increment(1),
-    })
-    .catch(console.error);
+  const clickRef = db.collection('unique_clicks').doc(uniqueClickId);
+  const clickDoc = await clickRef.get();
+
+  if (!clickDoc.exists) {
+    // Record the unique click
+    await clickRef.set({
+      linkId,
+      auraTreeId,
+      ip: ipString,
+      createdAt: new Date().toISOString()
+    });
+
+    // Increment click count in the link document
+    db.collection('auraTrees')
+      .doc(auraTreeId)
+      .collection('links')
+      .doc(linkId)
+      .update({
+        clickCount: fieldValue.increment(1),
+      })
+      .catch(console.error);
+
+    // Increment Aura Tree total click count
+    db.collection('auraTrees')
+      .doc(auraTreeId)
+      .update({
+        clickCount: fieldValue.increment(1),
+      })
+      .catch(console.error);
+
+    // Update Aura Score in background
+    setTimeout(async () => {
+      updateAuraScore(auraTreeId).catch(console.error);
+    }, 1000);
+  }
 
   res.status(200).json({
     success: true,

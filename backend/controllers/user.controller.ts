@@ -8,6 +8,7 @@ import { auth, db } from '../config/firebase';
 import { asyncHandler, Errors } from '../middlewares/error.middleware';
 import { uploadImage, deleteImage, getAvatarUrl } from '../config/cloudinary';
 import { isValidUsername, sanitizeString } from '../utils/helpers';
+import { updateAuraScore } from '../utils/auraScore';
 
 /**
  * Get current user profile
@@ -113,6 +114,12 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
     });
   }
 
+  // Update Aura Score
+  const scoreTargetId = (req.body.auraTreeId || (await db.collection('users').doc(userId).get()).data()?.auraTreeId);
+  if (scoreTargetId) {
+    await updateAuraScore(scoreTargetId).catch(console.error);
+  }
+
   // Get updated user data
   const userDoc = await db.collection('users').doc(userId).get();
 
@@ -129,23 +136,25 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
  */
 export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userId;
+  const { auraTreeId } = req.body;
 
   if (!userId) {
     throw Errors.Unauthorized('Authentication required');
   }
 
-  // Get user info
-  const userDoc = await db.collection('users').doc(userId).get();
-  const userData = userDoc.data();
-
   if (!req.file) {
     throw Errors.BadRequest('No image file provided');
   }
 
+  // 1. Determine Public ID based on context
+  // If auraTreeId is provided, it's a page-specific avatar
+  const publicId = auraTreeId ? `avatar-${auraTreeId}` : `avatar-${userId}`;
+  const folder = auraTreeId ? 'aura_tree/pages' : 'aura_tree/avatars';
+
   // Upload to Cloudinary
   const uploadResult = await uploadImage(req.file.buffer, {
-    folder: 'aura_tree/avatars',
-    publicId: `avatar-${userId}`,
+    folder,
+    publicId,
     transformation: {
       width: 400,
       height: 400,
@@ -154,23 +163,48 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
     },
   });
 
-  // Update user document with avatar URL
-  await db.collection('users').doc(userId).update({
-    avatarUrl: uploadResult.secure_url,
-    avatarPublicId: uploadResult.public_id,
-    updatedAt: new Date().toISOString(),
-  });
+  const avatarUrl = uploadResult.secure_url;
+  const avatarPublicId = uploadResult.public_id;
 
-  // Update Firebase Auth photo URL
-  await auth.updateUser(userId, {
-    photoURL: uploadResult.secure_url,
-  });
+  // 2. Update specific Aura Tree if ID provided
+  if (auraTreeId) {
+    const auraTreeRef = db.collection('auraTrees').doc(auraTreeId);
+    const auraTreeDoc = await auraTreeRef.get();
+    
+    if (!auraTreeDoc.exists || auraTreeDoc.data()?.userId !== userId) {
+      throw Errors.Forbidden('Invalid Aura Tree ID or access denied');
+    }
+
+    await auraTreeRef.update({
+      avatarUrl,
+      avatarPublicId,
+      updatedAt: new Date().toISOString(),
+    });
+  } else {
+    // Legacy/Account-level avatar
+    await db.collection('users').doc(userId).update({
+      avatarUrl,
+      avatarPublicId,
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Update Firebase Auth photo URL
+    await auth.updateUser(userId, {
+      photoURL: avatarUrl,
+    });
+  }
+
+  // Update Aura Score
+  const scoreTargetId = (req.body.auraTreeId || (await db.collection('users').doc(userId).get()).data()?.auraTreeId);
+  if (scoreTargetId) {
+    await updateAuraScore(scoreTargetId).catch(console.error);
+  }
 
   res.status(200).json({
     success: true,
     message: 'Avatar uploaded successfully',
     data: {
-      avatarUrl: uploadResult.secure_url,
+      avatarUrl,
     },
   });
 });
@@ -181,40 +215,58 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
  */
 export const deleteAvatar = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userId;
-  console.log(`🗑️ Attempting to delete avatar for user: ${userId}`);
+  const { auraTreeId } = req.body;
 
   if (!userId) {
     throw Errors.Unauthorized('Authentication required');
   }
 
-  const userDoc = await db.collection('users').doc(userId).get();
-  const userData = userDoc.data();
+  let avatarPublicId = '';
 
-  if (userData?.avatarPublicId) {
-    console.log(`☁️ Deleting Cloudinary image: ${userData.avatarPublicId}`);
+  if (auraTreeId) {
+    const auraTreeDoc = await db.collection('auraTrees').doc(auraTreeId).get();
+    if (auraTreeDoc.exists && auraTreeDoc.data()?.userId === userId) {
+      avatarPublicId = auraTreeDoc.data()?.avatarPublicId;
+      
+      // Update Aura Tree
+      await db.collection('auraTrees').doc(auraTreeId).update({
+        avatarUrl: '',
+        avatarPublicId: '',
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  } else {
+    const userDoc = await db.collection('users').doc(userId).get();
+    avatarPublicId = userDoc.data()?.avatarPublicId;
+
+    // Update user document
+    await db.collection('users').doc(userId).update({
+      avatarUrl: '',
+      avatarPublicId: '',
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Update Firebase Auth
     try {
-      await deleteImage(userData.avatarPublicId);
+      await auth.updateUser(userId, {
+        photoURL: null as any,
+      });
+    } catch (err) {}
+  }
+
+  // Delete from Cloudinary if exists
+  if (avatarPublicId) {
+    try {
+      await deleteImage(avatarPublicId);
     } catch (err) {
-      console.error('❌ Cloudinary deletion failed, continuing...', err);
+      console.error('Cloudinary deletion failed:', err);
     }
   }
 
-  console.log('📄 Updating Firestore user document...');
-  // Update user document
-  await db.collection('users').doc(userId).update({
-    avatarUrl: '',
-    avatarPublicId: '',
-    updatedAt: new Date().toISOString(),
-  });
-
-  console.log('🔑 Updating Firebase Auth profile...');
-  // Update Firebase Auth - null is usually safer than empty string to remove photoURL
-  try {
-    await auth.updateUser(userId, {
-      photoURL: null as any,
-    });
-  } catch (err) {
-    console.error('❌ Firebase Auth photoURL update failed', err);
+  // Update Aura Score
+  const scoreTargetId = (req.body.auraTreeId || (await db.collection('users').doc(userId).get()).data()?.auraTreeId);
+  if (scoreTargetId) {
+    await updateAuraScore(scoreTargetId).catch(console.error);
   }
 
   res.status(200).json({

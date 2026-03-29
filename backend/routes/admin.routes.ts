@@ -48,9 +48,22 @@ const createLogValidation = [
   handleValidationErrors,
 ];
 
+import {
+  getAllAffiliates,
+  getAffiliateReferralsAdmin,
+  getAllWithdrawals,
+  updateWithdrawalStatus
+} from '../controllers/adminAffiliate.controller';
+
 // Dashboard
 router.get('/stats', getStats);
 router.get('/analytics', getAnalytics);
+
+// Affiliates
+router.get('/affiliates', getAllAffiliates);
+router.get('/affiliates/:id/referrals', getAffiliateReferralsAdmin);
+router.get('/withdrawals', getAllWithdrawals);
+router.patch('/withdrawals/:id', updateWithdrawalStatus);
 
 // Users
 router.get('/users', getUsers);

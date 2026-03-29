@@ -195,12 +195,179 @@ async function loadPageData(page) {
     case 'users': await fetchUsers(1); break;
     case 'auratrees': await fetchAuraTrees(1); break;
     case 'links': await fetchUsersForLinks(1); break;
+    case 'affiliates': await fetchAffiliates(); break;
+    case 'withdrawals': await fetchWithdrawals(); break;
     case 'payments': await fetchPayments(1); break;
     case 'subscriptions': await fetchSubscriptions(1); break;
     case 'analytics': await fetchAnalytics(); break;
     case 'logs': await fetchLogs(1); break;
     case 'settings': await fetchSettings(); break;
   }
+}
+
+// --- PAGE: AFFILIATES ---
+async function fetchAffiliates() {
+  try {
+    const affiliates = await apiFetch('/admin/affiliates');
+    updateAffiliatesTable(affiliates);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function updateAffiliatesTable(affiliates) {
+  const tbody = document.getElementById('affiliatesTable');
+  if (!tbody) return;
+  
+  if (!affiliates || affiliates.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No affiliates found</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = affiliates.map(aff => `
+    <tr>
+      <td>
+        <div class="user-info">
+          <div style="font-weight: 600;">${aff.fullName}</div>
+          <div style="font-size: 11px;">${aff.email}</div>
+        </div>
+      </td>
+      <td><code>${aff.referralCode}</code></td>
+      <td>₦${(aff.totalEarnings || 0).toLocaleString()}</td>
+      <td style="color: var(--aura-mint); font-weight: 600;">₦${(aff.withdrawableBalance || 0).toLocaleString()}</td>
+      <td>${aff.stats?.signups || 0}</td>
+      <td>
+        <button class="action-btn view-referrals-btn" data-id="${aff.id}" title="View Referrals">
+          <i class="fas fa-users"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  if (!tbody.dataset.listenerAttached) {
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.view-referrals-btn');
+      if (btn) openAffiliateReferrals(btn.dataset.id);
+    });
+    tbody.dataset.listenerAttached = 'true';
+  }
+}
+
+async function openAffiliateReferrals(affiliateId) {
+  const modal = document.getElementById('affiliateReferralsModal');
+  const list = document.getElementById('referralsList');
+  
+  list.innerHTML = '<div class="text-center" style="padding: 40px;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+  modal.classList.add('active');
+
+  try {
+    const referrals = await apiFetch(`/admin/affiliates/${affiliateId}/referrals`);
+    
+    if (!referrals || referrals.length === 0) {
+      list.innerHTML = `
+        <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px dashed var(--glass-border);">
+          <i class="fas fa-users" style="font-size: 32px; color: var(--aura-text-secondary); margin-bottom: 12px; opacity: 0.5;"></i>
+          <p style="color: var(--aura-text-secondary);">This affiliate has no referrals yet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = referrals.map(ref => `
+      <div style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+        <div class="user-cell">
+          <div class="user-avatar" style="background: ${getAvatarGradient(ref.user?.displayName)}">
+            ${(ref.user?.displayName || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div class="user-info" style="margin-left: 12px;">
+            <div style="font-weight: 600; color: var(--aura-text);">${ref.user?.displayName || 'Unknown'}</div>
+            <div style="font-size: 11px; color: var(--aura-text-secondary);">${ref.user?.email || 'N/A'}</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div class="badge badge-${ref.user?.subscription?.plan || 'free'}">${(ref.user?.subscription?.plan || 'free').toUpperCase()}</div>
+          <div style="font-size: 10px; color: var(--aura-text-secondary); margin-top: 4px;">Joined: ${new Date(ref.createdAt).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) { 
+    showToast(e.message, 'error'); 
+    modal.classList.remove('active');
+  }
+}
+
+// --- PAGE: WITHDRAWALS ---
+async function fetchWithdrawals() {
+  try {
+    const withdrawals = await apiFetch('/admin/withdrawals');
+    updateWithdrawalsTable(withdrawals);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function updateWithdrawalsTable(withdrawals) {
+  const tbody = document.getElementById('withdrawalsTable');
+  if (!tbody) return;
+
+  if (!withdrawals || withdrawals.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No withdrawal requests</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = withdrawals.map(w => `
+    <tr>
+      <td>
+        <div class="user-info">
+          <div style="font-weight: 600;">${w.accountName}</div>
+          <div style="font-size: 11px;">${w.affiliateId}</div>
+        </div>
+      </td>
+      <td>₦${(w.amount || 0).toLocaleString()}</td>
+      <td>
+        <div style="font-weight: 600; color: var(--aura-mint);">₦${(w.netAmount || 0).toLocaleString()}</div>
+        <div style="font-size: 10px; color: #FF6161;">Fee: ₦${(w.fee || 0).toLocaleString()}</div>
+      </td>
+      <td>
+        <div style="font-size: 12px; font-weight: 500;">${w.bankName}</div>
+        <div style="font-size: 11px; font-family: monospace;">${w.accountNumber}</div>
+      </td>
+      <td><span class="badge badge-${w.status}">${w.status.toUpperCase()}</span></td>
+      <td>
+        ${w.status === 'pending' ? `
+          <div style="display: flex; gap: 4px;">
+            <button class="action-btn approve-withdrawal-btn" data-id="${w.id}" title="Mark as Paid" style="color: var(--aura-mint);">
+              <i class="fas fa-check-circle"></i>
+            </button>
+            <button class="action-btn reject-withdrawal-btn" data-id="${w.id}" title="Reject" style="color: #FF6161;">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+        ` : '---'}
+      </td>
+    </tr>
+  `).join('');
+
+  if (!tbody.dataset.listenerAttached) {
+    tbody.addEventListener('click', (e) => {
+      const approveBtn = e.target.closest('.approve-withdrawal-btn');
+      const rejectBtn = e.target.closest('.reject-withdrawal-btn');
+      if (approveBtn) handleWithdrawalStatus(approveBtn.dataset.id, 'paid');
+      if (rejectBtn) handleWithdrawalStatus(rejectBtn.dataset.id, 'rejected');
+    });
+    tbody.dataset.listenerAttached = 'true';
+  }
+}
+
+async function handleWithdrawalStatus(id, status) {
+  const action = status === 'paid' ? 'approve and mark as paid' : 'reject';
+  if (!(await showConfirm(`Are you sure you want to ${action} this withdrawal request?`, 'Withdrawal Status'))) return;
+
+  try {
+    await apiFetch(`/admin/withdrawals/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    showToast(`Withdrawal ${status}`);
+    fetchWithdrawals();
+  } catch (e) { showToast(e.message, 'error'); }
 }
 
 // Data Fetching Wrapper
@@ -465,7 +632,24 @@ async function openUserLinks(userId, userName) {
   } catch (e) { console.error(e); }
 }
 
-async function handleDeleteLinkInModal(linkId, treeId, userId, userName) { if (!confirm('Are you sure?')) return; try { const token = localStorage.getItem('adminToken'); await fetch(`${API_URL}/admin/links/${treeId}/${linkId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); openUserLinks(userId, userName); } catch (e) { alert('Failed'); } }
+async function handleDeleteLinkInModal(linkId, treeId, userId, userName) { 
+  const result = await showConfirm('Are you sure you want to delete this link? This action cannot be undone.', 'Delete Link', 'fa-trash-alt', '#FF6161');
+  if (!result) return;
+  
+  try { 
+    const token = localStorage.getItem('adminToken'); 
+    await fetch(`${API_URL}/admin/links/${treeId}/${linkId}`, { 
+      method: 'DELETE', 
+      headers: { 'Authorization': `Bearer ${token}` } 
+    }); 
+    showToast('Link deleted');
+    openUserLinks(userId, userName); 
+  } catch (e) { 
+    showToast('Failed to delete link', 'error'); 
+  } 
+}
+
+// ... rest of withdrawal logic already correctly using showConfirm ...
 
 // --- PAGE: PAYMENTS ---
 async function fetchPayments(page = 1) {
@@ -592,7 +776,21 @@ document.getElementById('systemSettingsForm')?.addEventListener('submit', async 
     proPrice: parseInt(document.getElementById('settingProPrice')?.value || '1000'),
     teamsPrice: parseInt(document.getElementById('settingTeamsPrice')?.value || '10000')
   };
-  try { btn.disabled = true; btn.innerHTML = 'Saving...'; await fetch(`${API_URL}/admin/settings`, { method: 'PUT', headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); alert('Settings Saved'); } catch (e) { alert('Error'); } finally { btn.disabled = false; btn.innerHTML = 'Save All Settings'; }
+  try { 
+    btn.disabled = true; 
+    btn.innerHTML = 'Saving...'; 
+    await fetch(`${API_URL}/admin/settings`, { 
+      method: 'PUT', 
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`, 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(body) 
+    }); 
+    showToast('Settings saved successfully'); 
+  } catch (e) { 
+    showToast('Failed to save settings', 'error'); 
+  } finally { 
+    btn.disabled = false; 
+    btn.innerHTML = 'Save All Settings'; 
+  }
 });
 
 // --- AUTH & MISC ---
@@ -612,12 +810,61 @@ document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
 function checkAuth() { const t = localStorage.getItem('adminToken'); if (t) { dashboardPage.classList.remove('hidden'); loginPage.classList.add('hidden'); const u = JSON.parse(localStorage.getItem('adminUser') || '{}'); document.querySelector('.admin-name').textContent = u.displayName || 'Admin'; loadDashboardData(); forceScrollTop(); } }
 
-['closeUserLinksModal', 'closeUserLinksBtn', 'closeChangePlanModal', 'cancelChangePlan', 'closeEditUserModal', 'cancelEditUser', 'closeDeleteUserModal', 'cancelDeleteUser'].forEach(id => document.getElementById(id)?.addEventListener('click', () => { 
-  document.getElementById('userLinksModal').classList.remove('active'); 
-  document.getElementById('changePlanModal').classList.remove('active'); 
-  document.getElementById('editUserModal').classList.remove('active');
-  document.getElementById('deleteUserModal').classList.remove('active');
-}));
+// Modal Management
+function closeModal() {
+  document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.classList.remove('active');
+  });
+  document.body.style.overflow = '';
+}
+
+// Global click-outside listener
+window.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    closeModal();
+  }
+});
+
+// Wire up all close buttons
+function initModalClosers() {
+  const closeSelectors = [
+    '.close-modal', 
+    '.btn-secondary', 
+    '#cancelEditUser', 
+    '#cancelDeleteUser', 
+    '#closeReferralsBtn',
+    '#closeUserLinksBtn',
+    '#cancelAddUser'
+  ];
+  
+  document.querySelectorAll(closeSelectors.join(',')).forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // Don't close if it's a primary action button or specific ignore
+      if (btn.classList.contains('btn-primary')) return;
+      closeModal();
+    });
+  });
+}
+
+// Call init on load
+setTimeout(initModalClosers, 500);
+
+function checkAuth() { 
+  const t = localStorage.getItem('adminToken'); 
+  if (t) { 
+    dashboardPage.classList.remove('hidden'); 
+    loginPage.classList.add('hidden'); 
+    const u = JSON.parse(localStorage.getItem('adminUser') || '{}'); 
+    document.querySelector('.admin-name').textContent = u.displayName || 'Admin'; 
+    loadDashboardData(); 
+    forceScrollTop(); 
+    initModalClosers(); // Re-init after page load
+  } 
+}
+
+// Remove the old manual array wiring at the bottom
+// (I will replace the block from ['closeUserLinksModal'...)
+
 const addUserModal = document.getElementById('addUserModal'); const addUserForm = document.getElementById('addUserForm');
 const toggleAddModal = () => { addUserModal.classList.toggle('active'); if (addUserModal.classList.contains('active')) addUserForm.reset(); };
 ['closeAddUserModal', 'cancelAddUser', 'addUserDashboardBtn', 'addUserBtn'].forEach(id => document.getElementById(id)?.addEventListener('click', toggleAddModal));

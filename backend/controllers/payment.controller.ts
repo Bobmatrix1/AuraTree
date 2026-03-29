@@ -15,6 +15,63 @@ import {
 } from '../config/paystack';
 
 /**
+ * Helper to create affiliate commission
+ */
+const createAffiliateCommission = async (userId: string, amount: number, reference: string, isRenewal: boolean = false) => {
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    const referredBy = userData?.referredBy;
+
+    if (referredBy) {
+      // Find affiliate by referral code
+      const affiliateSnapshot = await db.collection('affiliates')
+        .where('referralCode', '==', referredBy)
+        .limit(1)
+        .get();
+
+      if (!affiliateSnapshot.empty) {
+        const affiliateDoc = affiliateSnapshot.docs[0];
+        const affiliateId = affiliateDoc.id;
+
+        // Affiliate cannot earn from their own subscription
+        if (affiliateId === userId) return;
+
+        const commissionRate = 0.20; // 20%
+        const commissionAmount = amount * commissionRate;
+
+        const commissionData = {
+          affiliateId,
+          referredUserId: userId,
+          amount: commissionAmount,
+          subscriptionAmount: amount,
+          paymentReference: reference,
+          isRenewal,
+          status: 'pending', 
+          billingCycle: new Date().toISOString().substring(0, 7), // YYYY-MM
+          createdAt: new Date().toISOString(),
+        };
+
+        await db.collection('affiliateCommissions').add(commissionData);
+
+        // Update affiliate earnings
+        const affiliateData = affiliateDoc.data();
+        await affiliateDoc.ref.update({
+          totalEarnings: (affiliateData.totalEarnings || 0) + commissionAmount,
+          withdrawableBalance: (affiliateData.withdrawableBalance || 0) + commissionAmount,
+          'stats.activeSubscribers': (affiliateData.stats?.activeSubscribers || 0) + (isRenewal ? 0 : 1),
+          updatedAt: new Date().toISOString(),
+        });
+        
+        console.log(`Commission of ${commissionAmount} created for affiliate ${affiliateId}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error creating affiliate commission:', error);
+  }
+};
+
+/**
  * Initialize payment
  * POST /payments/initialize
  */
@@ -221,6 +278,9 @@ export const verifyPayment = asyncHandler(async (req: Request, res: Response) =>
       expiresAt: subscriptionData.expiresAt,
     },
   });
+
+  // Create affiliate commission
+  createAffiliateCommission(paymentData.userId, paymentData.amount / 100, reference).catch(console.error);
 });
 
 /**
@@ -417,6 +477,9 @@ export const handleWebhook = asyncHandler(async (req: Request, res: Response) =>
             isRenewal: !!subscriptionCode,
             createdAt: new Date().toISOString(),
           });
+
+          // Create affiliate commission
+          createAffiliateCommission(userId, data.amount / 100, data.reference, !!subscriptionCode).catch(console.error);
         } else if (subscriptionCode) {
           // If userId is missing but we have a subscription code, find user by subscription code
           const userSnapshot = await db.collection('users')
@@ -444,6 +507,9 @@ export const handleWebhook = asyncHandler(async (req: Request, res: Response) =>
               isRenewal: true,
               createdAt: new Date().toISOString(),
             });
+
+            // Create affiliate commission for renewal
+            createAffiliateCommission(userDoc.id, data.amount / 100, data.reference, true).catch(console.error);
           }
         }
       }

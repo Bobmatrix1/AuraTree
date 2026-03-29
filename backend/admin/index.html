@@ -1248,6 +1248,24 @@
     </div>
   </div>
 
+  <!-- Affiliate Referrals Modal -->
+  <div id="affiliateReferralsModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Referred Members</h3>
+        <button class="close-modal" id="closeAffiliateReferralsModal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="referralsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 8px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="closeReferralsBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Login Page (shown when not authenticated) -->
   <div id="loginPage" class="login-container">
     <div class="login-card">
@@ -1329,6 +1347,14 @@
           <a href="#" class="nav-item" data-page="links">
             <i class="fas fa-link"></i>
             <span>Links</span>
+          </a>
+          <a href="#" class="nav-item" data-page="affiliates">
+            <i class="fas fa-handshake"></i>
+            <span>Affiliates</span>
+          </a>
+          <a href="#" class="nav-item" data-page="withdrawals">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Withdrawals</span>
           </a>
         </div>
         
@@ -1601,46 +1627,62 @@
 
       <!-- Links Page -->
       <div id="page-links" class="page-content hidden">
+        <!-- ... existing links content ... -->
+      </div>
+
+      <!-- Affiliates Page -->
+      <div id="page-affiliates" class="page-content hidden">
         <div class="page-header">
-          <h1 class="page-title">Links Management</h1>
+          <h1 class="page-title">Affiliate Management</h1>
         </div>
-
-        <div class="search-filter">
-          <input type="text" class="search-input" id="linkUserSearchInput" placeholder="Search for a user to see their links...">
-        </div>
-
+        
         <div class="card">
           <div class="card-body">
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>User</th>
-                    <th>User ID</th>
-                    <th>Plan</th>
-                    <th>Status</th>
+                    <th>Affiliate</th>
+                    <th>Code</th>
+                    <th>Earned</th>
+                    <th>Balance</th>
+                    <th>Referrals</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody id="linkUsersTable">
+                <tbody id="affiliatesTable">
                   <!-- Populated by JS -->
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Links Pagination -->
-            <div class="pagination-container" id="linksPagination" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; padding: 0 8px;">
-              <div style="font-size: 13px; color: var(--aura-text-secondary);">
-                Showing page <span id="linkCurrentPage">1</span> of <span id="linkTotalPages">1</span>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary" id="prevLinksBtn" style="padding: 8px 16px; font-size: 13px;">
-                  <i class="fas fa-chevron-left"></i> Previous
-                </button>
-                <button class="btn btn-secondary" id="nextLinksBtn" style="padding: 8px 16px; font-size: 13px;">
-                  Next <i class="fas fa-chevron-right"></i>
-                </button>
-              </div>
+      <!-- Withdrawals Page -->
+      <div id="page-withdrawals" class="page-content hidden">
+        <div class="page-header">
+          <h1 class="page-title">Withdrawal Requests</h1>
+        </div>
+        
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Affiliate</th>
+                    <th>Amount</th>
+                    <th>Net (Fee)</th>
+                    <th>Bank Details</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="withdrawalsTable">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

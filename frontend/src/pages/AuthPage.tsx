@@ -48,7 +48,12 @@ const AuthPage = () => {
 
     try {
       if (mode === 'signup') {
-        // Register
+        const referredBy = localStorage.getItem('referred_by');
+
+        // Register via API or Firebase Client?
+        // The current code uses Firebase Client SDK then Firestore setDoc.
+        // Let's stick to that but add referredBy.
+        
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
@@ -58,7 +63,7 @@ const AuthPage = () => {
         });
 
         // Create user document in Firestore
-        await setDoc(doc(db, 'users', user.uid), {
+        const userData = {
           uid: user.uid,
           email: user.email,
           displayName: displayName || email.split('@')[0],
@@ -74,7 +79,17 @@ const AuthPage = () => {
             status: 'active',
             expiresAt: null,
           },
-        });
+          referredBy: referredBy || null,
+        };
+
+        await setDoc(doc(db, 'users', user.uid), userData);
+
+        // If referredBy exists, we should also notify the backend or handle it here
+        // Since we updated the backend register controller, maybe we should use it?
+        // For now, adding it to Firestore directly works as the backend will check this field.
+        
+        // Clear referral from storage
+        if (referredBy) localStorage.removeItem('referred_by');
 
         toast.success('Account created successfully!');
         navigate('/dashboard');

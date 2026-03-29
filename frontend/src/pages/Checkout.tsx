@@ -6,6 +6,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Check, ArrowLeft, CreditCard, Shield, Zap, Users, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_V1_URL } from '../config/api';
 
 const Checkout = () => {
   const [searchParams] = useSearchParams();
@@ -26,7 +27,7 @@ const Checkout = () => {
 
     const fetchPrices = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/v1/system/settings');
+        const response = await fetch(`${API_V1_URL}/system/settings`);
         const data = await response.json();
         if (data.success) {
           setPrices({
@@ -84,7 +85,7 @@ const Checkout = () => {
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      const response = await fetch('http://localhost:5000/api/v1/payments/initialize', {
+      const response = await fetch(`${API_V1_URL}/payments/initialize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
