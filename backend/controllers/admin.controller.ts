@@ -6,6 +6,7 @@
 import { Request, Response } from 'express';
 import { db, auth } from '../config/firebase';
 import { asyncHandler, Errors } from '../middlewares/error.middleware';
+import { resend } from '../config/resend';
 
 // Production-ready in-memory cache
 let statsCache: { data: any; timestamp: number } | null = null;
@@ -437,6 +438,147 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({ success: true, message: 'Settings updated successfully' });
 });
 
+/**
+ * Testimonials
+ */
+export const getAdminTestimonials = asyncHandler(async (req: Request, res: Response) => {
+  const { page = 1, limit = 20 } = req.query;
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+
+  const countSnap = await db.collection('testimonials').count().get();
+  const total = countSnap.data().count;
+
+  const snapshot = await db.collection('testimonials')
+    .orderBy('createdAt', 'desc')
+    .limit(limitNum)
+    .offset((pageNum - 1) * limitNum)
+    .get();
+
+  const testimonials = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      testimonials,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    }
+  });
+});
+
+export const deleteTestimonial = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  // Get testimonial to potentially delete image from Cloudinary
+  const doc = await db.collection('testimonials').doc(id).get();
+  if (doc.exists) {
+    const data = doc.data();
+    if (data?.avatar && data.avatar.includes('cloudinary')) {
+      // Could implement Cloudinary deletion here if publicId was stored
+    }
+    await db.collection('testimonials').doc(id).delete();
+  }
+
+  res.status(200).json({ success: true, message: 'Testimonial deleted' });
+});
+
+/**
+ * Newsletter Subscribers
+ */
+export const getSubscribers = asyncHandler(async (req: Request, res: Response) => {
+  const { page = 1, limit = 20 } = req.query;
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+
+  const countSnap = await db.collection('subscribers').count().get();
+  const total = countSnap.data().count;
+
+  const snapshot = await db.collection('subscribers')
+    .orderBy('subscribedAt', 'desc')
+    .limit(limitNum)
+    .offset((pageNum - 1) * limitNum)
+    .get();
+
+  const subscribers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      subscribers,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    }
+  });
+});
+
+export const deleteSubscriber = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  await db.collection('subscribers').doc(id).delete();
+  res.status(200).json({ success: true, message: 'Subscriber removed' });
+});
+
+export const sendNewsletter = asyncHandler(async (req: Request, res: Response) => {
+  const { subject, content, recipientId } = req.body;
+
+  if (!subject || !content) {
+    throw new Errors.BadRequestError('Subject and content are required');
+  }
+
+  let recipients: string[] = [];
+
+  if (recipientId) {
+    // Single recipient
+    const doc = await db.collection('subscribers').doc(recipientId).get();
+    if (doc.exists) recipients.push(doc.data()?.email);
+  } else {
+    // All active subscribers
+    const snapshot = await db.collection('subscribers').where('isActive', '==', true).get();
+    recipients = snapshot.docs.map(doc => doc.data().email);
+  }
+
+  if (recipients.length === 0) {
+    throw new Errors.NotFoundError('No recipients found');
+  }
+
+  // Send via Resend using verified domain
+  const { data, error } = await resend.emails.send({
+    from: 'AuraTree <newsletter@feel-flytech.site>', 
+    to: recipients,
+    subject: subject,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <img src="https://auratree.me/aura%20tree%20logo.png" alt="AuraTree" style="width: 150px;">
+        </div>
+        <div style="color: #333; line-height: 1.6; font-size: 16px;">
+          ${content}
+        </div>
+        <hr style="margin: 40px 0; border: 0; border-top: 1px solid #eee;">
+        <div style="text-align: center; color: #999; font-size: 12px;">
+          <p>© 2026 AuraTree. All rights reserved.</p>
+          <p>You received this because you are subscribed to Aura Insights.</p>
+        </div>
+      </div>
+    `
+  });
+
+  if (error) {
+    console.error('Resend API Error Detail:', JSON.stringify(error, null, 2));
+    throw new Errors.ApiError(500, `Resend Error: ${error.message}`);
+  }
+
+  res.status(200).json({ success: true, message: `Email sent to ${recipients.length} recipients` });
+});
+
 export default {
-  getStats, getUsers, getUserDetails, updateUser, deleteUser, getAuraTrees, getLinks, deleteLink, getPayments, getAnalytics, createLog, getLogs, getSettings, updateSettings
+  getStats, getUsers, getUserDetails, updateUser, deleteUser, getAuraTrees, getLinks, deleteLink, getPayments, getAnalytics, createLog, getLogs, getSettings, updateSettings, getAdminTestimonials, deleteTestimonial, getSubscribers, deleteSubscriber, sendNewsletter
 };

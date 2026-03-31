@@ -80,30 +80,6 @@ const HeroSection = ({ user, onDemoClick, onAuthClick }: HeroSectionProps) => {
         0.75
       );
 
-      // Scroll-driven exit animation - ONLY ON DESKTOP
-      if (isDesktop) {
-        gsap.to(section, {
-          scrollTrigger: {
-            trigger: section,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: true,
-            onUpdate: (self) => {
-              const p = self.progress;
-              // Smoothly fade out elements as we scroll
-              gsap.set(centerCardRef.current, { x: -100 * p, opacity: 1 - p * 1.5 });
-              if (orbitCardsRef.current) {
-                gsap.set(orbitCardsRef.current, { opacity: 1 - p * 2 });
-              }
-              gsap.set([headlineRef.current, subheadRef.current, ctaRef.current], { 
-                y: -50 * p, 
-                opacity: 1 - p * 1.5 
-              });
-            }
-          }
-        });
-      }
-
     }, section);
 
     return () => ctx.revert();

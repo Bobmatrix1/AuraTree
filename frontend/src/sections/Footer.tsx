@@ -1,31 +1,40 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Sparkles, Twitter, Instagram, Github } from 'lucide-react';
+import { Sparkles, Twitter, Instagram, Github, Mail, Phone, MessageSquare, ExternalLink, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const Footer = () => {
+interface FooterProps {
+  isContactOpen?: boolean;
+  onContactOpenChange?: (open: boolean) => void;
+}
+
+const Footer = ({ isContactOpen, onContactOpenChange }: FooterProps) => {
   const footerRef = useRef<HTMLElement>(null);
+
+  const setIsContactOpen = onContactOpenChange || (() => {});
 
   useEffect(() => {
     const footer = footerRef.current;
     if (!footer) return;
 
     const ctx = gsap.context(() => {
+      // Simple fade-in without scrubbing to prevent lag
       gsap.fromTo(
         footer,
         { y: 20, opacity: 0 },
         {
           y: 0,
           opacity: 1,
+          duration: 0.8,
           ease: 'power2.out',
           scrollTrigger: {
             trigger: footer,
             start: 'top 95%',
-            end: 'top 70%',
-            scrub: 0.6,
+            toggleActions: 'play none none none'
           }
         }
       );
@@ -54,13 +63,14 @@ const Footer = () => {
       { label: 'Pricing', id: 'pricing' },
     ],
     Company: [
-      { label: 'About', action: () => toast.info('About page coming soon!') },
-      { label: 'Blog', action: () => toast.info('Blog coming soon!') },
-      { label: 'Careers', action: () => toast.info('Careers page coming soon!') },
+      { label: 'About', path: '/about' },
+      { label: 'Blog', path: '/blog' },
+      { label: 'Contact Us', action: () => setIsContactOpen(true) },
+      { label: 'Careers', path: '/careers' },
     ],
     Legal: [
-      { label: 'Privacy', action: () => toast.info('Privacy policy coming soon!') },
-      { label: 'Terms', action: () => toast.info('Terms of service coming soon!') },
+      { label: 'Privacy', path: '/privacy' },
+      { label: 'Terms', path: '/terms' },
     ],
   };
 
@@ -75,22 +85,20 @@ const Footer = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12 mb-10 sm:mb-12">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
-              <a 
-                href="#" 
-                onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className="flex items-center gap-0 group mb-4"
+              <div 
+                className="flex items-center gap-0 mb-4"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 -ml-2 sm:-mr-2 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 -ml-2 sm:-mr-2 flex items-center justify-center transition-transform duration-300">
                   <img 
                     src="/aura%20tree%20logo.png" 
                     alt="Aura Tree Logo" 
                     className="w-full h-full object-contain scale-[3.2] invert dark:invert-0 transition-all duration-300" 
                   />
                 </div>
-                <span className="font-display font-semibold text-base sm:text-lg text-aura-text group-hover:text-aura-violet transition-colors">
+                <span className="font-display font-semibold text-base sm:text-lg text-aura-text transition-colors">
                   Aura Tree
                 </span>
-              </a>
+              </div>
               <p className="text-aura-text-secondary text-xs sm:text-sm">
                 Your links. Your aura. One powerful page.
               </p>
@@ -103,15 +111,22 @@ const Footer = () => {
                   {category}
                 </h4>
                 <ul className="space-y-2 sm:space-y-3">
-                  {items.map((item, i) => (
+                  {items.map((item: any, i) => (
                     <li key={i}>
-                      {'id' in item ? (
+                      {item.id ? (
                         <button
                           onClick={() => scrollToSection(item.id!)}
                           className="text-xs sm:text-sm text-aura-text-secondary hover:text-aura-text transition-colors"
                         >
                           {item.label}
                         </button>
+                      ) : item.path ? (
+                        <Link
+                          to={item.path}
+                          className="text-xs sm:text-sm text-aura-text-secondary hover:text-aura-text transition-colors"
+                        >
+                          {item.label}
+                        </Link>
                       ) : (
                         <button
                           onClick={item.action}

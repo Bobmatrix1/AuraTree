@@ -5,7 +5,7 @@ import { signOut } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { API_BASE_URL } from '../config/api';
 
@@ -14,18 +14,20 @@ interface NavigationProps {
   onDemoClick: () => void;
   onAuthClick: () => void;
   onLoginClick: () => void;
+  onContactClick: () => void;
 }
 
-const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: NavigationProps) => {
+const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactClick }: NavigationProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const { theme, setTheme } = useTheme();
-  const [mounted, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch
   useEffect(() => {
-    setLoading(true);
+    setMounted(true);
   }, []);
 
   // Check if user is admin
@@ -67,7 +69,15 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
   }, []);
 
   const toggleTheme = () => {
+    // Add attribute to trigger "no-transition" state in CSS
+    document.documentElement.setAttribute('data-theme-switching', 'true');
+    
     setTheme(theme === 'dark' ? 'light' : 'dark');
+    
+    // Remove attribute after a short delay to re-enable smooth UI interactions
+    setTimeout(() => {
+      document.documentElement.removeAttribute('data-theme-switching');
+    }, 150);
   };
 
   const scrollToSection = (id: string) => {
@@ -97,18 +107,15 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
         <div className="w-full px-4 sm:px-6 lg:px-12">
           <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20">
             {/* Logo */}
-            <div 
-              className="flex items-center gap-0 group cursor-pointer"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            >
-              <div className="w-14 h-14 sm:w-20 sm:h-20 -mr-2 sm:-mr-4 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+            <div className="flex items-center gap-0 group relative z-[60]">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 -mr-2 sm:-mr-4 flex items-center justify-center transition-transform duration-300">
                 <img 
                   src="/aura%20tree%20logo.png" 
                   alt="Aura Tree Logo" 
                   className="w-full h-full object-contain scale-[3.2] invert dark:invert-0 transition-all duration-300" 
                 />
               </div>
-              <span className="font-display font-bold text-lg sm:text-xl text-aura-text group-hover:text-aura-violet transition-colors">
+              <span className="font-display font-bold text-lg sm:text-xl text-aura-text transition-colors">
                 Aura <span className="text-aura-violet">Tree</span>
               </span>
             </div>
@@ -124,6 +131,12 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
                   {link.label}
                 </button>
               ))}
+              <button
+                onClick={() => { onContactClick(); setIsMobileMenuOpen(false); }}
+                className="text-sm text-aura-text-secondary hover:text-aura-text transition-colors"
+              >
+                Contact Us
+              </button>
             </div>
 
             {/* Desktop CTA */}
@@ -164,7 +177,7 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
                   </button>
                   <button 
                     onClick={() => {
-                      window.location.href = '/dashboard';
+                      navigate('/dashboard');
                     }}
                     className="btn-primary text-sm py-2.5 px-5 flex items-center gap-2"
                   >
@@ -215,12 +228,12 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
         />
         
         <div 
-          className={`absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-aura-navy/80 backdrop-blur-3xl border-l border-white/10 flex flex-col items-center justify-center gap-8 p-6 transition-transform duration-300 ease-out shadow-[-20px_0_50px_rgba(0,0,0,0.5)] ${
+          className={`absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-aura-navy/80 backdrop-blur-3xl border-l border-white/10 flex flex-col items-center justify-start gap-8 p-6 pt-32 transition-transform duration-300 ease-out shadow-[-20px_0_50px_rgba(0,0,0,0.5)] overflow-y-auto overflow-x-hidden no-scrollbar ${
             isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
           data-lenis-prevent
         >
-          <div className="absolute top-6 left-6 right-6 flex justify-between items-center">
+          <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-10">
             <button 
               onClick={toggleTheme}
               className="p-3 rounded-full bg-white/5 border border-white/10 text-aura-text-secondary"
@@ -235,16 +248,22 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick }: Navigation
             </button>
           </div>
 
-          <div className="flex flex-col items-center gap-8 w-full">
+          <div className="flex flex-col items-center gap-8 w-full relative z-20">
             {navLinks.map((link) => (
               <button
                 key={link.id}
                 onClick={() => scrollToSection(link.id)}
-                className="text-3xl font-display font-bold text-aura-text hover:text-aura-violet transition-colors"
+                className="text-3xl font-display font-bold text-aura-text hover:text-aura-cyan active:text-aura-cyan active:scale-95 transition-all"
               >
                 {link.label}
               </button>
             ))}
+            <button
+              onClick={() => { onContactClick(); setIsMobileMenuOpen(false); }}
+              className="text-3xl font-display font-bold text-aura-text hover:text-aura-cyan active:text-aura-cyan active:scale-95 transition-all"
+            >
+              Contact Us
+            </button>
           </div>
           
           <div className="w-32 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent my-2" />

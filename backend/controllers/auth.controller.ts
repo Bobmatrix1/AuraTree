@@ -82,6 +82,24 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   await db.collection('users').doc(userRecord.uid).set(userData);
 
+  // 4. Automatically add to newsletter subscribers
+  try {
+    const emailLower = email.toLowerCase();
+    const subQuery = await db.collection('subscribers').where('email', '==', emailLower).get();
+    
+    if (subQuery.empty) {
+      await db.collection('subscribers').add({
+        email: emailLower,
+        subscribedAt: new Date().toISOString(),
+        isActive: true,
+        source: 'user_registration'
+      });
+    }
+  } catch (error) {
+    console.error('Error auto-subscribing user:', error);
+    // Don't fail registration if auto-subscription fails
+  }
+
   // If referredBy exists, record the referral
   if (referredBy) {
     // Find affiliate by referral code

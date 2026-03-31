@@ -36,7 +36,7 @@ const AuthPage = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     });
     return () => unsubscribe();
@@ -92,12 +92,12 @@ const AuthPage = () => {
         if (referredBy) localStorage.removeItem('referred_by');
 
         toast.success('Account created successfully!');
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       } else if (mode === 'login') {
         // Login
         await signInWithEmailAndPassword(auth, email, password);
         toast.success('Logged in successfully!');
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       } else if (mode === 'forgot-password') {
         // Forgot Password
         await sendPasswordResetEmail(auth, email);

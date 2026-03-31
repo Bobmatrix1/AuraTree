@@ -52,8 +52,9 @@ import {
 } from 'react-icons/si';
 import { FaSkype } from 'react-icons/fa6';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import ReviewModal from '../components/ReviewModal';
 import { 
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, BarChart, Bar, Cell 
@@ -142,7 +143,11 @@ const THEMES = [
 ];
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState<'links' | 'appearance' | 'analytics' | 'affiliate' | 'settings'>('links');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') as any;
+  const [activeTab, setActiveTab] = useState<'links' | 'appearance' | 'analytics' | 'affiliate' | 'settings'>(
+    ['links', 'appearance', 'analytics', 'affiliate', 'settings'].includes(initialTab) ? initialTab : 'links'
+  );
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const [auraTree, setAuraTree] = useState<any>(null);
@@ -194,6 +199,7 @@ const Dashboard = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showCancelSubModal, setShowCancelSubModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   
   // Form States
   const [editingLink, setEditingLink] = useState<any>(null);
@@ -614,7 +620,7 @@ const Dashboard = () => {
               try {
                 if (savedPageId) {
                   // If we have a saved ID, load that specific page
-                  await handlePageSwitch(savedPageId);
+                  await handlePageSwitch(savedPageId, true);
                 } else if (uData.auraTreeId) {
                   // Otherwise fallback to their primary page
                   await fetchAuraTree();
@@ -1506,9 +1512,16 @@ const Dashboard = () => {
                           </div>
                           {isFree ? <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-sm font-bold">Upgrade Plan</button> : userData?.subscription?.status === 'active' ? <button onClick={handleCancelSubscription} disabled={isCancelling} className="px-6 py-3 rounded-xl border border-red-500/30 text-red-500 text-sm font-bold hover:bg-red-500/10 transition-all disabled:opacity-50">{isCancelling ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : 'Cancel Subscription'}</button> : <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-sm font-bold">Resubscribe</button>}
                         </div>
-                        <div className="mt-8 pt-8 border-t border-white/5">
-                          <h4 className="text-sm font-bold text-aura-text mb-4 uppercase tracking-widest">Account Security</h4>
-                          <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-aura-text-secondary hover:text-white transition-colors text-sm font-medium"><LucideShield className="w-4 h-4" /> Change Password</button>
+                        <div className="mt-8 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                          <div>
+                            <h4 className="text-sm font-bold text-aura-text mb-4 uppercase tracking-widest">Account Security</h4>
+                            <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-aura-text-secondary hover:text-white transition-colors text-sm font-medium"><LucideShield className="w-4 h-4" /> Change Password</button>
+                          </div>
+                          <div className="h-12 w-px bg-white/5 hidden sm:block" />
+                          <div>
+                            <h4 className="text-sm font-bold text-aura-text mb-4 uppercase tracking-widest">Feedback</h4>
+                            <button onClick={() => setShowReviewModal(true)} className="flex items-center gap-2 text-aura-violet hover:text-aura-cyan transition-colors text-sm font-bold"><LucideSparkles className="w-4 h-4" /> Leave a Review</button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1715,6 +1728,8 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      <ReviewModal isOpen={showReviewModal} onClose={() => setShowReviewModal(false)} />
 
       {showDeletePageModal && deletingPage && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">

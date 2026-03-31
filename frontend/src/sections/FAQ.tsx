@@ -19,24 +19,24 @@ const FAQ = () => {
 
   const faqs = [
     {
-      question: 'Can I use a custom domain?',
-      answer: 'Yes! Pro and Teams plans allow you to connect your own domain. Simply add your domain in settings, configure the DNS records, and your Aura Tree page will be live on your custom URL within minutes.',
+      question: 'How does the Affiliate Program work?',
+      answer: 'It\'s simple! When you become an affiliate, you receive a unique referral link. You\'ll earn a 20% recurring monthly commission for every new customer who signs up for a Pro or Teams plan through your link.',
     },
     {
-      question: 'Is there a limit on links?',
-      answer: 'No, all plans include unlimited links. Add as many links as you need to showcase your content, products, and social profiles.',
+      question: 'How is my Aura Score calculated?',
+      answer: 'Your Aura Score is a dynamic metric out of 100 that measures the health and influence of your page. It\'s calculated based on several factors, including your profile completeness (photo, bio), engagement (visits, click-through rate), and the diversity of your links.',
     },
     {
-      question: 'Can I reorder links?',
-      answer: 'Absolutely! Our drag-and-drop interface makes it easy to reorder your links. Simply grab the handle next to any link and drag it to your desired position. Changes are reflected instantly on your live page.',
+      question: 'Is there a limit to how many pages I can create?',
+      answer: 'Yes, page creation is based on your plan. The Free plan includes 1 page. Upgrading to Pro gives you 2 pages, and the Teams plan unlocks unlimited pages for ultimate flexibility.',
     },
     {
-      question: 'How does analytics work?',
-      answer: 'We track views, clicks, and referrers in real-time. The dashboard shows daily, weekly, and monthly trends, click-through rates for each link, and your top traffic sources. No additional setup required.',
+      question: 'What makes your analytics different?',
+      answer: 'We focus on accuracy. Our analytics track unique visitors based on their IP address, preventing the same person from inflating your view or click counts. This gives you a more realistic understanding of your audience reach and engagement.',
     },
     {
-      question: 'Can I cancel anytime?',
-      answer: 'Yes, you can cancel your subscription at any time. Your page will remain active until the end of your billing period, then automatically downgrade to the free plan with all your links preserved.',
+      question: 'Can I customize my profile link?',
+      answer: 'Yes! On the Pro plan, you can choose a custom name with our official prefix (e.g., aura.tree/yourbrand). The Teams plan takes it a step further by allowing you to remove the "aura-" prefix entirely, giving you a fully branded, white-labeled link for your profile.',
     },
   ];
 

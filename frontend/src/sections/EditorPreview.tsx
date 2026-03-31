@@ -28,64 +28,21 @@ const EditorPreview = ({ onAuthClick }: EditorPreviewProps) => {
     if (!section) return;
 
     const ctx = gsap.context(() => {
-      const isDesktop = window.innerWidth >= 1024;
-
-      if (isDesktop) {
-        const scrollTl = gsap.timeline({
+      // Simple reveal for both mobile and desktop
+      gsap.fromTo(
+        [editorRef.current, phoneRef.current],
+        { opacity: 0, y: 30 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.8, 
+          stagger: 0.2,
           scrollTrigger: {
             trigger: section,
-            start: 'top top',
-            end: '+=130%',
-            pin: true,
-            scrub: 0.6,
+            start: 'top 85%',
           }
-        });
-
-        // ENTRANCE (0-35%)
-        scrollTl.fromTo(
-          editorRef.current,
-          { x: '-50vw', opacity: 0 },
-          { x: 0, opacity: 1, ease: 'power2.out' },
-          0
-        );
-
-        scrollTl.fromTo(
-          phoneRef.current,
-          { x: '50vw', opacity: 0 },
-          { x: 0, opacity: 1, ease: 'power2.out' },
-          0.05
-        );
-
-        // EXIT (70-100%)
-        scrollTl.to(
-          editorRef.current,
-          { x: '-20vw', opacity: 0, ease: 'power2.in' },
-          0.75
-        );
-
-        scrollTl.to(
-          phoneRef.current,
-          { x: '20vw', opacity: 0, ease: 'power2.in' },
-          0.75
-        );
-      } else {
-        // Mobile simple fade in
-        gsap.fromTo(
-          [editorRef.current, phoneRef.current],
-          { opacity: 0, y: 40 },
-          { 
-            opacity: 1, 
-            y: 0, 
-            duration: 0.8, 
-            stagger: 0.2,
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 80%',
-            }
-          }
-        );
-      }
-
+        }
+      );
     }, section);
 
     return () => ctx.revert();
@@ -94,7 +51,7 @@ const EditorPreview = ({ onAuthClick }: EditorPreviewProps) => {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full min-h-screen lg:h-screen lg:overflow-hidden bg-aura-navy py-24 sm:py-32 lg:py-0 flex items-center"
+      className="relative w-full bg-aura-navy py-24 sm:py-32 flex items-center"
       style={{ zIndex: 60 }}
     >
       {/* Grid Background */}

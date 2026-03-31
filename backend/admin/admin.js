@@ -103,6 +103,8 @@ const paginationState = {
   users: { page: 1, totalPages: 1 },
   auratrees: { page: 1, totalPages: 1 },
   links: { page: 1, totalPages: 1 },
+  testimonials: { page: 1, totalPages: 1 },
+  subscribers: { page: 1, totalPages: 1 },
   payments: { page: 1, totalPages: 1 },
   subs: { page: 1, totalPages: 1 },
   logs: { page: 1, totalPages: 1 }
@@ -195,6 +197,8 @@ async function loadPageData(page) {
     case 'users': await fetchUsers(1); break;
     case 'auratrees': await fetchAuraTrees(1); break;
     case 'links': await fetchUsersForLinks(1); break;
+    case 'testimonials': await fetchTestimonials(1); break;
+    case 'subscribers': await fetchSubscribers(1); break;
     case 'affiliates': await fetchAffiliates(); break;
     case 'withdrawals': await fetchWithdrawals(); break;
     case 'payments': await fetchPayments(1); break;
@@ -651,6 +655,240 @@ async function handleDeleteLinkInModal(linkId, treeId, userId, userName) {
 
 // ... rest of withdrawal logic already correctly using showConfirm ...
 
+// --- PAGE: TESTIMONIALS ---
+async function fetchTestimonials(page = 1) {
+  try {
+    const data = await apiFetch(`/admin/testimonials?page=${page}&limit=20`);
+    const testimonials = data.testimonials || [];
+    const pagination = data.pagination || { page: 1, totalPages: 1 };
+    
+    paginationState.testimonials.page = pagination.page;
+    paginationState.testimonials.totalPages = pagination.totalPages;
+    
+    updateTestimonialsTable(testimonials);
+    updatePaginationUI('testimonial', pagination);
+  } catch (e) { console.error(e); }
+}
+
+function updateTestimonialsTable(testimonials) {
+  const tbody = document.getElementById('testimonialsTable');
+  if (!tbody) return;
+  
+  if (!testimonials || testimonials.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 40px;">No testimonials found</td></tr>';
+    return;
+  }
+
+  // Store data globally for the modal
+  window.currentTestimonials = testimonials;
+
+  tbody.innerHTML = testimonials.map((t, index) => `
+    <tr class="testimonial-row" data-id="${t.id}" data-index="${index}" style="cursor: pointer;">
+      <td>
+        <div class="user-cell">
+          <div class="user-avatar" style="overflow: hidden; background: transparent;">
+            <img src="${t.avatar}" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="user-info">
+            <span class="user-name">${t.name}</span>
+            <span class="user-email">${t.role}</span>
+            <div class="mobile-quote-preview" style="display: none; font-size: 11px; color: var(--aura-text-secondary); margin-top: 4px; font-style: italic;">
+              "${t.quote.substring(0, 40)}${t.quote.length > 40 ? '...' : ''}"
+            </div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div style="max-width: 300px; font-size: 13px; line-height: 1.4; color: var(--aura-text-secondary);">
+          "${t.quote.substring(0, 100)}${t.quote.length > 100 ? '...' : ''}"
+        </div>
+      </td>
+      <td><span class="badge badge-active">${t.status || 'approved'}</span></td>
+      <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+      <td>
+        <button class="action-btn delete-testimonial-btn" data-id="${t.id}" title="Delete" style="color: #FF6161;">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  if (!tbody.dataset.listenerAttached) {
+    tbody.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('.delete-testimonial-btn');
+      if (deleteBtn) {
+        e.stopPropagation();
+        handleDeleteTestimonial(deleteBtn.dataset.id);
+        return;
+      }
+      
+      const row = e.target.closest('.testimonial-row');
+      if (row) {
+        const index = row.dataset.index;
+        openTestimonialDetail(window.currentTestimonials[index]);
+      }
+    });
+    tbody.dataset.listenerAttached = 'true';
+  }
+}
+
+function openTestimonialDetail(t) {
+  const modal = document.getElementById('testimonialDetailModal');
+  document.getElementById('detailAvatar').querySelector('img').src = t.avatar;
+  document.getElementById('detailName').textContent = t.name;
+  document.getElementById('detailRole').textContent = t.role;
+  document.getElementById('detailQuote').textContent = t.quote;
+  document.getElementById('detailDate').textContent = new Date(t.createdAt).toLocaleDateString();
+  
+  const deleteBtn = document.getElementById('deleteDetailBtn');
+  deleteBtn.onclick = () => {
+    closeModal();
+    handleDeleteTestimonial(t.id);
+  };
+  
+  modal.classList.add('active');
+}
+
+async function handleDeleteTestimonial(id) {
+  if (!(await showConfirm('Are you sure you want to delete this testimonial?', 'Delete Testimonial', 'fa-trash', '#FF6161'))) return;
+  
+  try {
+    await apiFetch(`/admin/testimonials/${id}`, { method: 'DELETE' });
+    showToast('Testimonial deleted');
+    fetchTestimonials(paginationState.testimonials.page);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// --- PAGE: SUBSCRIBERS ---
+async function fetchSubscribers(page = 1) {
+  try {
+    const data = await apiFetch(`/admin/subscribers?page=${page}&limit=20`);
+    const subscribers = data.subscribers || [];
+    const pagination = data.pagination || { page: 1, totalPages: 1 };
+    
+    paginationState.subscribers.page = pagination.page;
+    paginationState.subscribers.totalPages = pagination.totalPages;
+    
+    updateSubscribersTable(subscribers);
+    updatePaginationUI('subscribers', pagination);
+  } catch (e) { console.error(e); }
+}
+
+function updateSubscribersTable(subscribers) {
+  const tbody = document.getElementById('subscribersTable');
+  if (!tbody) return;
+  
+  if (!subscribers || subscribers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 40px;">No subscribers found</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = subscribers.map(s => `
+    <tr>
+      <td>
+        <div style="font-weight: 600; color: var(--aura-text);">${s.email}</div>
+      </td>
+      <td><span class="badge badge-free">${s.source || 'newsletter'}</span></td>
+      <td>${new Date(s.subscribedAt).toLocaleDateString()}</td>
+      <td><span class="badge badge-active">Subscribed</span></td>
+      <td>
+        <div style="display: flex; gap: 4px;">
+          <button class="action-btn send-email-btn" data-id="${s.id}" data-email="${s.email}" title="Send Email" style="color: var(--aura-violet);">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+          <button class="action-btn delete-subscriber-btn" data-id="${s.id}" title="Remove" style="color: #FF6161;">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  if (!tbody.dataset.listenerAttached) {
+    tbody.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('.delete-subscriber-btn');
+      if (deleteBtn) handleDeleteSubscriber(deleteBtn.dataset.id);
+      
+      const emailBtn = e.target.closest('.send-email-btn');
+      if (emailBtn) openEmailModal(emailBtn.dataset.id, emailBtn.dataset.email);
+    });
+    tbody.dataset.listenerAttached = 'true';
+  }
+}
+
+async function handleDeleteSubscriber(id) {
+  if (!(await showConfirm('Remove this subscriber from the list?', 'Delete Subscriber', 'fa-trash', '#FF6161'))) return;
+  try {
+    await apiFetch(`/admin/subscribers/${id}`, { method: 'DELETE' });
+    showToast('Subscriber removed');
+    fetchSubscribers(paginationState.subscribers.page);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// --- EMAIL SENDING ---
+let currentRecipientId = null;
+
+function openEmailModal(recipientId = null, email = null) {
+  currentRecipientId = recipientId;
+  const modal = document.getElementById('emailModal');
+  const display = document.getElementById('recipientDisplay');
+  const emailSpan = document.getElementById('recipientEmail');
+  const title = document.getElementById('emailModalTitle');
+  
+  if (email) {
+    display.style.display = 'block';
+    emailSpan.textContent = email;
+    title.textContent = 'Send Individual Email';
+  } else {
+    display.style.display = 'none';
+    title.textContent = 'Send Bulk Newsletter';
+  }
+  
+  document.getElementById('emailSubject').value = '';
+  document.getElementById('emailContent').value = '';
+  modal.classList.add('active');
+}
+
+document.getElementById('bulkEmailBtn')?.addEventListener('click', () => openEmailModal());
+
+async function handleSendEmail() {
+  const subject = document.getElementById('emailSubject').value;
+  const content = document.getElementById('emailContent').value;
+  const btn = document.getElementById('sendEmailSubmitBtn');
+
+  if (!subject || !content) {
+    showToast('Please provide subject and content', 'error');
+    return;
+  }
+
+  try {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    
+    await apiFetch('/admin/newsletter/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject,
+        content,
+        recipientId: currentRecipientId
+      })
+    });
+    
+    showToast('Email sent successfully');
+    closeModal();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Now';
+  }
+}
+
+document.getElementById('sendEmailSubmitBtn')?.addEventListener('click', handleSendEmail);
+document.getElementById('closeEmailModal')?.addEventListener('click', closeModal);
+document.getElementById('cancelEmailBtn')?.addEventListener('click', closeModal);
+
 // --- PAGE: PAYMENTS ---
 async function fetchPayments(page = 1) {
   const status = document.getElementById('paymentStatusFilter')?.value || 'all';
@@ -798,7 +1036,7 @@ const setupFilter = (id, callback) => { const el = document.getElementById(id); 
 setupFilter('userSearchInput', fetchUsers); setupFilter('planFilter', fetchUsers); setupFilter('statusFilter', fetchUsers); setupFilter('treeSearchInput', fetchAuraTrees); setupFilter('treeStatusFilter', fetchAuraTrees); setupFilter('linkUserSearchInput', fetchUsersForLinks); setupFilter('paymentStatusFilter', fetchPayments); setupFilter('subSearchInput', fetchSubscriptions); setupFilter('subPlanFilter', fetchSubscriptions); setupFilter('subStatusFilter', fetchSubscriptions); setupFilter('analyticsPeriod', fetchAnalytics);
 
 const setupPagination = (prefix, state, cb) => { document.getElementById(`prev${prefix}Btn`)?.addEventListener('click', () => { if (state.page > 1) cb(state.page - 1); }); document.getElementById(`next${prefix}Btn`)?.addEventListener('click', () => { if (state.page < state.totalPages) cb(state.page + 1); }); };
-setupPagination('Users', paginationState.users, fetchUsers); setupPagination('Trees', paginationState.auratrees, fetchAuraTrees); setupPagination('Links', paginationState.links, fetchUsersForLinks); setupPagination('Payments', paginationState.payments, fetchPayments); setupPagination('Subs', paginationState.subs, fetchSubscriptions); setupPagination('Logs', paginationState.logs, fetchLogs);
+setupPagination('Users', paginationState.users, fetchUsers); setupPagination('Trees', paginationState.auratrees, fetchAuraTrees); setupPagination('Links', paginationState.links, fetchUsersForLinks); setupPagination('Testimonial', paginationState.testimonials, fetchTestimonials); setupPagination('Payments', paginationState.payments, fetchPayments); setupPagination('Subs', paginationState.subs, fetchSubscriptions); setupPagination('Logs', paginationState.logs, fetchLogs);
 
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault(); const btn = e.target.querySelector('.login-btn');

@@ -159,7 +159,7 @@ const Pricing = ({ user, onPlanClick }: PricingProps) => {
     <section
       ref={sectionRef}
       id="pricing"
-      className="relative w-full min-h-screen py-16 sm:py-20 lg:py-0 flex items-center"
+      className="relative w-full min-h-screen py-16 sm:py-20 lg:py-24 flex items-center"
       style={{ zIndex: 80 }}
     >
       <div className="w-full px-4 sm:px-6 lg:px-12">

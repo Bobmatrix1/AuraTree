@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aura Tree Admin Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -142,6 +143,37 @@
       min-height: 100vh;
       overflow-x: hidden;
       transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+      .admin-table thead th:nth-child(2),
+      .admin-table thead th:nth-child(4),
+      .admin-table tbody td:nth-child(2),
+      .admin-table tbody td:nth-child(4) {
+        display: none;
+      }
+      
+      #page-testimonials .user-cell {
+        flex-direction: row;
+        align-items: center;
+      }
+      
+      #page-testimonials .user-avatar {
+        width: 32px;
+        height: 32px;
+      }
+      
+      #page-testimonials .user-name {
+        font-size: 13px;
+      }
+      
+      #page-testimonials .user-email {
+        font-size: 10px;
+      }
+      
+      .mobile-quote-preview {
+        display: block !important;
+      }
     }
 
     /* Mobile Header */
@@ -1348,15 +1380,23 @@
             <i class="fas fa-link"></i>
             <span>Links</span>
           </a>
+          <a href="#" class="nav-item" data-page="testimonials">
+            <i class="fas fa-comment-dots"></i>
+            <span>Testimonials</span>
+          </a>
           <a href="#" class="nav-item" data-page="affiliates">
             <i class="fas fa-handshake"></i>
             <span>Affiliates</span>
           </a>
           <a href="#" class="nav-item" data-page="withdrawals">
-            <i class="fas fa-money-bill-wave"></i>
+            <i class="fas fa-wallet"></i>
             <span>Withdrawals</span>
           </a>
-        </div>
+          <a href="#" class="nav-item" data-page="subscribers">
+            <i class="fas fa-envelope-open-text"></i>
+            <span>Subscribers</span>
+          </a>
+          </div>
         
         <div class="nav-section">
           <div class="nav-section-title">Finance</div>
@@ -1625,9 +1665,151 @@
         </div>
       </div>
 
+      <!-- Subscribers Page -->
+      <div id="page-subscribers" class="page-content hidden">
+        <div class="page-header">
+          <h1 class="page-title">Newsletter Subscribers</h1>
+          <button class="btn btn-primary" id="bulkEmailBtn">
+            <i class="fas fa-paper-plane"></i> Send Bulk Email
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Source</th>
+                    <th>Joined</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="subscribersTable">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="pagination-container" id="subscribersPagination" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; padding: 0 8px;">
+              <div style="font-size: 13px; color: var(--aura-text-secondary);">
+                Showing page <span id="subscriberCurrentPage">1</span> of <span id="subscriberTotalPages">1</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" id="prevSubscribersBtn" style="padding: 8px 16px; font-size: 13px;">
+                  <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <button class="btn btn-secondary" id="nextSubscribersBtn" style="padding: 8px 16px; font-size: 13px;">
+                  Next <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email Modal -->
+      <div id="emailModal" class="modal-overlay">
+        <div class="modal-content animate-in zoom-in-95 duration-200" style="max-width: 600px;">
+          <div class="modal-header">
+            <h2 class="modal-title" id="emailModalTitle">Send Newsletter</h2>
+            <button class="close-modal" id="closeEmailModal"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body" style="padding: 24px;">
+            <div id="recipientDisplay" class="mb-4" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 12px; font-size: 13px; display: none; margin-bottom: 20px; border: 1px solid var(--glass-border);">
+              Recipient: <span id="recipientEmail" class="text-aura-violet font-bold"></span>
+            </div>
+            <div class="form-group mb-4" style="margin-bottom: 20px;">
+              <label class="form-label" style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--aura-text-secondary);">Subject Line</label>
+              <input type="text" id="emailSubject" class="form-input" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; box-sizing: border-box;" placeholder="e.g. Weekly Aura Insights">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--aura-text-secondary);">Email Content (HTML supported)</label>
+              <textarea id="emailContent" class="form-input" style="width: 100%; height: 300px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; resize: none; box-sizing: border-box;" placeholder="Write your newsletter content here..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer" style="padding: 20px; border-top: 1px solid var(--glass-border); display: flex; justify-content: flex-end; gap: 12px;">
+            <button class="btn btn-secondary" id="cancelEmailBtn">Cancel</button>
+            <button class="btn btn-primary" id="sendEmailSubmitBtn" style="background: var(--aura-violet);">
+              <i class="fas fa-paper-plane"></i> Send Now
+            </button>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Links Page -->
       <div id="page-links" class="page-content hidden">
         <!-- ... existing links content ... -->
+      </div>
+
+      <!-- Testimonials Page -->
+      <div id="page-testimonials" class="page-content hidden">
+        <div class="page-header">
+          <h1 class="page-title">User Testimonials</h1>
+        </div>
+        
+        <div class="table-container animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Quote</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="testimonialsTable">
+              <!-- JS Injected -->
+            </tbody>
+          </table>
+          
+          <div class="pagination-container" id="testimonialPagination" style="display: none;">
+            <button class="pagination-btn" id="prevTestimonialBtn"><i class="fas fa-chevron-left"></i></button>
+            <div class="pagination-info">
+              Page <span id="testimonialCurrentPage">1</span> of <span id="testimonialTotalPages">1</span>
+            </div>
+            <button class="pagination-btn" id="nextTestimonialBtn"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial Detail Modal -->
+      <div id="testimonialDetailModal" class="modal-overlay">
+        <div class="modal-content animate-in zoom-in-95 duration-200" style="max-width: 500px;">
+          <div class="modal-header">
+            <h2 class="modal-title">Testimonial Details</h2>
+            <button class="close-modal" id="closeTestimonialDetailModal"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body" style="padding: 24px;">
+            <div id="testimonialDetailContent" class="flex flex-col items-center text-center">
+              <div id="detailAvatar" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin: 0 auto 20px; border: 3px solid var(--aura-violet); background: var(--aura-navy);">
+                <img src="" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+              <h3 id="detailName" style="font-size: 20px; font-weight: 700; margin-bottom: 4px; color: var(--aura-text);"></h3>
+              <p id="detailRole" style="font-size: 14px; color: var(--aura-text-secondary); margin-bottom: 24px;"></p>
+              
+              <div style="position: relative; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px solid var(--glass-border);">
+                <i class="fas fa-quote-left" style="position: absolute; top: -10px; left: 10px; font-size: 24px; color: var(--aura-violet); opacity: 0.5;"></i>
+                <p id="detailQuote" style="font-size: 16px; line-height: 1.6; color: var(--aura-text); font-style: italic;"></p>
+              </div>
+              
+              <div style="margin-top: 24px; display: flex; justify-content: center; gap: 12px; font-size: 12px; color: var(--aura-text-secondary);">
+                <span><i class="fas fa-calendar-alt" style="margin-right: 6px;"></i><span id="detailDate"></span></span>
+                <span><i class="fas fa-check-circle" style="margin-right: 6px; color: var(--aura-mint);"></i>Approved</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="closeDetailBtn">Close</button>
+            <button class="btn btn-primary" id="deleteDetailBtn" style="background: #FF6161;">Delete Testimonial</button>
+          </div>
+        </div>
       </div>
 
       <!-- Affiliates Page -->

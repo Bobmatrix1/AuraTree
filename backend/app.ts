@@ -22,6 +22,7 @@ import paymentRoutes from './routes/payment.routes';
 import adminRoutes from './routes/admin.routes';
 import systemRoutes from './routes/system.routes';
 import affiliateRoutes from './routes/affiliate.routes';
+import testimonialRoutes from './routes/testimonial.routes';
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
@@ -73,6 +74,7 @@ app.use(`${API_VERSION}/links`, linkRoutes);
 app.use(`${API_VERSION}/payments`, paymentRoutes);
 app.use(`${API_VERSION}/admin`, adminRoutes);
 app.use(`${API_VERSION}/system`, systemRoutes);
+app.use(`${API_VERSION}/testimonials`, testimonialRoutes);
 
 // Serve Public Assets
 app.use(express.static(path.join(__dirname, 'public')));

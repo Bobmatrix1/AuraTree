@@ -20,6 +20,11 @@ import {
   getLogs,
   getSettings,
   updateSettings,
+  getAdminTestimonials,
+  deleteTestimonial,
+  getSubscribers,
+  deleteSubscriber,
+  sendNewsletter,
 } from '../controllers/admin.controller';
 import { verifyToken, requireAdmin } from '../middlewares/auth.middleware';
 import { handleValidationErrors } from '../middlewares/error.middleware';
@@ -89,5 +94,14 @@ router.post('/logs', createLogValidation, createLog);
 // Settings
 router.get('/settings', getSettings);
 router.put('/settings', updateSettings);
+
+// Testimonials
+router.get('/testimonials', getAdminTestimonials);
+router.delete('/testimonials/:id', deleteTestimonial);
+
+// Subscribers
+router.get('/subscribers', getSubscribers);
+router.delete('/subscribers/:id', deleteSubscriber);
+router.post('/newsletter/send', sendNewsletter);
 
 export default router;

@@ -24,16 +24,16 @@ const FinalCTA = ({ onCompareClick, onAuthClick, user }: FinalCTAProps) => {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         contentRef.current,
-        { scale: 0.98, opacity: 0 },
+        { scale: 0.95, opacity: 0 },
         {
           scale: 1,
           opacity: 1,
+          duration: 0.8,
           ease: 'power2.out',
           scrollTrigger: {
             trigger: section,
-            start: 'top 80%',
-            end: 'top 40%',
-            scrub: 0.6,
+            start: 'top 85%',
+            toggleActions: 'play none none none'
           }
         }
       );

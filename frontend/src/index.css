@@ -94,17 +94,22 @@
     @apply bg-aura-navy text-aura-text antialiased;
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
-    /* Fast but smooth background transition */
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    /* Ultra fast snap for theme switching */
+    transition: background-color 0.1s ease-out, color 0.1s ease-out;
   }
 
-  /* Smooth transition for specific UI elements instead of everything */
+  /* Smooth but snappy transition for specific UI elements */
   .glass-card, 
   .glass-card-sm, 
   .btn-primary, 
   .btn-secondary,
-  h1, h2, h3, p, span, a, button {
-    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  h1, h2, h3, p, span, a, button, i, svg {
+    transition: background-color 0.1s ease-out, border-color 0.1s ease-out, color 0.1s ease-out, box-shadow 0.1s ease-out, opacity 0.1s ease-out;
+  }
+
+  /* Prevent transition lag on initial load and forced theme changes */
+  [data-theme-switching="true"] * {
+    transition: none !important;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -143,6 +148,10 @@
 
   .dark .glass-card-sm {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+
+  .shadow-glow-violet {
+    box-shadow: 0 0 20px rgba(123, 97, 255, 0.5), 0 0 40px rgba(123, 97, 255, 0.2);
   }
   
   /* Glow Effects */
@@ -203,7 +212,7 @@
     height: 100%;
     pointer-events: none;
     opacity: 0.04;
-    z-index: 9999;
+    z-index: 100;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   }
   
@@ -297,6 +306,30 @@
   
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(123, 97, 255, 0.5);
+  }
+
+  /* Legal Content Styling */
+  .legal-content {
+    color: var(--aura-text-secondary);
+  }
+
+  .legal-content h1, 
+  .legal-content h2 {
+    color: var(--aura-text) !important;
+  }
+
+  .legal-content ul li {
+    color: var(--aura-text-secondary);
+  }
+
+  .legal-content strong {
+    color: var(--aura-text);
+  }
+
+  .light .legal-content .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
   }
 }
 

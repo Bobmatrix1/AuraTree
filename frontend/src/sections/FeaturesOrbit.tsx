@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Link2, Palette, QrCode } from 'lucide-react';
+import { Link2, Palette, QrCode, BarChart3, Sparkles, Users } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -25,7 +25,22 @@ const FeaturesOrbit = () => {
     {
       icon: QrCode,
       title: 'QR + Share',
-      description: 'One scan to your page. Share anywhere, anytime.',
+      description: 'One scan to your page. Share anywhere, anytime with built-in QR generation.',
+    },
+    {
+      icon: BarChart3,
+      title: 'Real-time Analytics',
+      description: 'Track unique visits, link clicks, and CTR with our IP-based accurate tracking.',
+    },
+    {
+      icon: Sparkles,
+      title: 'Aura Score',
+      description: 'Measure your profile influence with our proprietary page completeness algorithm.',
+    },
+    {
+      icon: Users,
+      title: 'Affiliate Program',
+      description: 'Earn 20% recurring monthly commission for every friend you refer to Pro.',
     },
   ];
 
@@ -34,72 +49,22 @@ const FeaturesOrbit = () => {
     if (!section) return;
 
     const ctx = gsap.context(() => {
-      const isDesktop = window.innerWidth >= 1024;
-
-      if (isDesktop) {
-        const scrollTl = gsap.timeline({
+      // Simple one-time reveal when 20% visible
+      gsap.fromTo(
+        [headlineRef.current, subcopyRef.current, cardsRef.current],
+        { opacity: 0, y: 30 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.8, 
+          stagger: 0.2,
           scrollTrigger: {
             trigger: section,
-            start: 'top top',
-            end: '+=100%',
-            pin: true,
-            scrub: 0.6,
+            start: 'top 80%',
+            toggleActions: 'play none none none' // Play once, no scrub
           }
-        });
-
-        // ENTRANCE (0-30%)
-        scrollTl.fromTo(
-          headlineRef.current,
-          { y: '-10vh', opacity: 0 },
-          { y: 0, opacity: 1, ease: 'none' },
-          0
-        );
-
-        scrollTl.fromTo(
-          subcopyRef.current,
-          { y: '-6vh', opacity: 0 },
-          { y: 0, opacity: 1, ease: 'none' },
-          0.08
-        );
-
-        // Cards entrance
-        scrollTl.fromTo(
-          cardsRef.current,
-          { y: '20vh', opacity: 0 },
-          { y: 0, opacity: 1, ease: 'none' },
-          0.1
-        );
-
-        // EXIT (70-100%)
-        scrollTl.to(
-          cardsRef.current,
-          { y: '15vh', opacity: 0, ease: 'power2.in' },
-          0.7
-        );
-
-        scrollTl.to(
-          [headlineRef.current, subcopyRef.current],
-          { y: '-8vh', opacity: 0, ease: 'power2.in' },
-          0.72
-        );
-      } else {
-        // Simple fade-in for mobile without pinning
-        gsap.fromTo(
-          [headlineRef.current, subcopyRef.current, cardsRef.current],
-          { opacity: 0, y: 30 },
-          { 
-            opacity: 1, 
-            y: 0, 
-            duration: 0.8, 
-            stagger: 0.2,
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 80%',
-            }
-          }
-        );
-      }
-
+        }
+      );
     }, section);
 
     return () => ctx.revert();
@@ -109,7 +74,7 @@ const FeaturesOrbit = () => {
     <section
       ref={sectionRef}
       id="features"
-      className="relative w-full min-h-screen lg:h-screen lg:overflow-hidden flex items-center justify-center py-24 sm:py-32 lg:py-0"
+      className="relative w-full min-h-screen flex items-center justify-center py-24 sm:py-32"
       style={{ zIndex: 20 }}
     >
       {/* Content */}

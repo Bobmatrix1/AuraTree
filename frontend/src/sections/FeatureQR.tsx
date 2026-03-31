@@ -34,42 +34,20 @@ const FeatureQR = ({ user }: FeatureQRProps) => {
     if (!section) return;
 
     const ctx = gsap.context(() => {
-      const isDesktop = window.innerWidth >= 1024;
-
-      // Text block animation
+      // Simple entrance reveal
       gsap.fromTo(
-        textRef.current,
-        { x: isDesktop ? '-8vw' : 0, y: isDesktop ? 0 : 30, opacity: 0 },
+        [visualRef.current, textRef.current],
+        { y: 40, opacity: 0 },
         {
-          x: 0,
           y: 0,
           opacity: 1,
+          duration: 0.8,
+          stagger: 0.2,
           ease: 'power2.out',
           scrollTrigger: {
             trigger: section,
-            start: isDesktop ? 'top 80%' : 'top 90%',
-            end: isDesktop ? 'top 30%' : 'top 60%',
-            scrub: isDesktop ? 0.6 : false,
-            once: !isDesktop,
-          }
-        }
-      );
-
-      // Visual card animation
-      gsap.fromTo(
-        visualRef.current,
-        { scale: 0.92, opacity: 0, y: isDesktop ? '6vh' : 40 },
-        {
-          scale: 1,
-          opacity: 1,
-          y: 0,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: section,
-            start: isDesktop ? 'top 80%' : 'top 90%',
-            end: isDesktop ? 'top 30%' : 'top 60%',
-            scrub: isDesktop ? 0.6 : false,
-            once: !isDesktop,
+            start: 'top 80%',
+            toggleActions: 'play none none none'
           }
         }
       );
@@ -81,7 +59,7 @@ const FeatureQR = ({ user }: FeatureQRProps) => {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full min-h-screen py-24 sm:py-32 lg:py-0 flex items-center lg:overflow-hidden"
+      className="relative w-full min-h-screen py-24 sm:py-32 flex items-center"
       style={{ zIndex: 50 }}
     >
       <div className="w-full px-4 sm:px-6 lg:px-12">
