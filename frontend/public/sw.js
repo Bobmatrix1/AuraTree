@@ -1,3 +1,12 @@
+// PropellerAds Configuration
+self.options = {
+    "domain": "3nbf4.com",
+    "zoneId": 10864322
+}
+self.lary = ""
+importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw')
+
+// PWA & Navigation Configuration
 const CACHE_NAME = 'aura-tree-v1';
 
 self.addEventListener('install', (event) => {
@@ -13,8 +22,6 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
-        // If network fails, try to return index.html from cache if you implemented caching
-        // For now, just let it fail naturally without crashing the SW
         return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
       })
     );
