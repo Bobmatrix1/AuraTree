@@ -20,16 +20,29 @@ const initializeFirebase = (): void => {
   try {
     // Check for environment variables (Production/Render)
     if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL) {
-      // Robust PEM formatting fix
-      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+      // 1. Get raw key and trim whitespace
+      let privateKey = process.env.FIREBASE_PRIVATE_KEY.trim();
       
-      // Remove extra quotes if they exist at start/end
-      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-        privateKey = privateKey.substring(1, privateKey.length - 1);
+      // 2. Remove all types of wrapping quotes (", ', or backticks)
+      privateKey = privateKey.replace(/^['"`]+|['"`]+$/g, '');
+      
+      // 3. Handle escaped newlines (\n -> actual newline)
+      // We do this twice to handle double-escaped strings common in some CI/CD environments
+      privateKey = privateKey.replace(/\\n/g, '\n').replace(/\\n/g, '\n');
+      
+      // 4. Ensure it has the correct PEM headers
+      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+        privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}`;
       }
-      
-      // Fix newline characters
-      privateKey = privateKey.replace(/\\n/g, '\n');
+      if (!privateKey.includes('-----END PRIVATE KEY-----')) {
+        privateKey = `${privateKey}\n-----END PRIVATE KEY-----\n`;
+      }
+
+      // Safe Debug (Log only first/last few chars to avoid exposing key)
+      console.log('Firebase Key Check:');
+      console.log(`- Start: "${privateKey.substring(0, 25)}..."`);
+      console.log(`- End: "...${privateKey.substring(privateKey.length - 25).replace(/\n/g, '\\n')}"`);
+      console.log(`- Length: ${privateKey.length} chars`);
 
       admin.initializeApp({
         credential: admin.credential.cert({
