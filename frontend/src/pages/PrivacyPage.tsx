@@ -5,6 +5,7 @@ import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { Shield, Lock, Eye, FileText, ArrowLeft, Mail } from 'lucide-react';
 import Navigation from '../components/Navigation';
+import PropellerAd from '../components/PropellerAd';
 import Footer from '../sections/Footer';
 import Starfield from '../components/Starfield';
 import { Link } from 'react-router-dom';
@@ -125,6 +126,11 @@ const PrivacyPage = ({ onContactClick }: PageProps) => {
                 <li>Analyzing trends and usage to enhance user experience</li>
               </ul>
             </section>
+
+            {/* Ad in Privacy Policy */}
+            <div className="py-4 border-y border-white/5">
+              <PropellerAd zoneId="your_privacy_zone" format="banner" className="mx-auto" />
+            </div>
 
             <section>
               <h2 className="text-white font-display font-bold text-xl mb-4 flex items-center gap-3">

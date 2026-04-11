@@ -56,6 +56,7 @@ import { toast } from 'sonner';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import ReviewModal from '../components/ReviewModal';
+import PropellerAd from '../components/PropellerAd';
 import { 
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, BarChart, Bar, Cell 
@@ -388,6 +389,27 @@ const Dashboard = () => {
 
   const handleCancelSubscription = () => {
     setShowCancelSubModal(true);
+  };
+
+  const handleShareClick = () => {
+    if (userData?.subscription?.plan === 'free') {
+      // Trigger Interstitial for Free users
+      // Note: In production, use your actual Zone ID
+      const interstitialZoneId = 'your_interstitial_zone_id'; 
+      
+      toast.info('Generating your link... please wait a moment.', {
+        duration: 3000,
+      });
+
+      // Optional: Trigger the actual Propeller interstitial script logic here
+      // For now, we simulate the "watch" delay
+      setTimeout(() => {
+        setShowShareModal(true);
+      }, 2000);
+    } else {
+      // Paid users get instant access
+      setShowShareModal(true);
+    }
   };
 
   const confirmCancelSubscription = async () => {
@@ -1207,7 +1229,7 @@ const Dashboard = () => {
                 <LucideUsers className="w-4 h-4" /> Become an Affiliate
               </button>
             )}
-            <button onClick={() => setShowShareModal(true)} className="hidden sm:flex btn-primary py-2 px-6 text-sm font-bold shadow-lg shadow-aura-violet/20">
+            <button onClick={handleShareClick} className="hidden sm:flex btn-primary py-2 px-6 text-sm font-bold shadow-lg shadow-aura-violet/20">
               Share Profile
             </button>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-aura-violet to-aura-cyan p-0.5 overflow-hidden">
@@ -1418,7 +1440,7 @@ const Dashboard = () => {
                       </div>
                       <div className="p-6 pt-0 mt-4 border-t border-white/5">
                         <button 
-                          onClick={() => setShowShareModal(true)} 
+                          onClick={handleShareClick} 
                           className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-2xl shadow-aura-violet/30 hover:scale-[1.02] transition-transform whitespace-nowrap"
                         >
                           Publish & Generate Link Page <LucideShare className="w-5 h-5" />

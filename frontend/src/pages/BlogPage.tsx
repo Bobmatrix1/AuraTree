@@ -19,6 +19,7 @@ import {
   Bookmark
 } from 'lucide-react';
 import Navigation from '../components/Navigation';
+import PropellerAd from '../components/PropellerAd';
 import Footer from '../sections/Footer';
 import Starfield from '../components/Starfield';
 import { Link, useNavigate } from 'react-router-dom';
@@ -360,6 +361,11 @@ const BlogPage = ({ onContactClick }: PageProps) => {
               dangerouslySetInnerHTML={{ __html: selectedPost.content }}
             />
 
+            {/* Ad in Article */}
+            <div className="my-12">
+              <PropellerAd zoneId="your_blog_article_zone" format="banner" className="mx-auto" />
+            </div>
+
             <div className="mt-16 pt-8 border-t border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button 
@@ -418,6 +424,11 @@ const BlogPage = ({ onContactClick }: PageProps) => {
                   />
                 </div>
               </div>
+            </section>
+
+            {/* Ad in Blog List */}
+            <section className="max-w-7xl mx-auto px-4 mb-12">
+              <PropellerAd zoneId="your_blog_list_zone" format="banner" className="mx-auto" />
             </section>
 
             {/* Results Grid */}

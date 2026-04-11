@@ -19,6 +19,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import Navigation from '../components/Navigation';
+import PropellerAd from '../components/PropellerAd';
 import Footer from '../sections/Footer';
 import Starfield from '../components/Starfield';
 import { Link, useNavigate } from 'react-router-dom';
@@ -189,6 +190,11 @@ const CareersPage = ({ onContactClick }: PageProps) => {
           </div>
         </section>
 
+        {/* Ad Slot 1 */}
+        <section className="max-w-7xl mx-auto px-4 mb-16">
+          <PropellerAd zoneId="your_careers_zone_1" format="banner" className="mx-auto" />
+        </section>
+
         {/* Culture / Values */}
         <section className="reveal-section px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20">
           <div className="grid md:grid-cols-3 gap-6">
@@ -229,6 +235,11 @@ const CareersPage = ({ onContactClick }: PageProps) => {
           <div className="text-center mb-12">
             <h2 className="font-display font-bold text-3xl mb-4">Open Roles</h2>
             <p className="text-aura-text-secondary">Explore our current opportunities and find your next challenge.</p>
+          </div>
+
+          {/* Ad in Careers */}
+          <div className="mb-12">
+            <PropellerAd zoneId="your_careers_zone_2" format="banner" className="mx-auto" />
           </div>
           
           <div className="space-y-12">

@@ -30,6 +30,7 @@ import {
   Music2
 } from 'lucide-react';
 import Navigation from '../components/Navigation';
+import PropellerAd from '../components/PropellerAd';
 import Footer from '../sections/Footer';
 import Starfield from '../components/Starfield';
 import { Link, useNavigate } from 'react-router-dom';
@@ -233,6 +234,11 @@ const AboutPage = ({ onContactClick }: PageProps) => {
           </div>
         </section>
 
+        {/* Ad Slot 1 */}
+        <section className="max-w-7xl mx-auto px-4 mb-16">
+          <PropellerAd zoneId="your_about_zone_1" format="banner" className="mx-auto" />
+        </section>
+
         {/* Feature Grid */}
         <section className="reveal-section px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -399,6 +405,11 @@ const AboutPage = ({ onContactClick }: PageProps) => {
                </div>
             </div>
           </div>
+        </section>
+
+        {/* Ad Slot 2 */}
+        <section className="max-w-7xl mx-auto px-4 mb-16">
+          <PropellerAd zoneId="your_about_zone_2" format="banner" className="mx-auto" />
         </section>
 
         {/* Final CTA */}

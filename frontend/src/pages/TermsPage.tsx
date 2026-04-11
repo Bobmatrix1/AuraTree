@@ -5,6 +5,7 @@ import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { FileText, Scale, AlertCircle, CheckCircle2, ArrowLeft, Mail } from 'lucide-react';
 import Navigation from '../components/Navigation';
+import PropellerAd from '../components/PropellerAd';
 import Footer from '../sections/Footer';
 import Starfield from '../components/Starfield';
 import { Link } from 'react-router-dom';
@@ -133,6 +134,11 @@ const TermsPage = ({ onContactClick }: PageProps) => {
                 <li>Impersonating AuraTree staff or other users.</li>
               </ul>
             </section>
+
+            {/* Ad in Terms of Service */}
+            <div className="py-4 border-y border-white/5">
+              <PropellerAd zoneId="your_terms_zone" format="banner" className="mx-auto" />
+            </div>
 
             <section>
               <h2 className="text-white font-display font-bold text-xl mb-4 flex items-center gap-3">
