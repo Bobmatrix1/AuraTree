@@ -19,31 +19,40 @@ const initializeFirebase = (): void => {
   }
 
   try {
-    // Check for environment variables (Production/Render)
+    // 1. ALWAYS try local file first (Best for local dev)
+    const localKeyPath = path.resolve(__dirname, '../serviceAccountKey.json');
+    const rootKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
+    
+    let serviceAccount = null;
+    if (require('fs').existsSync(localKeyPath)) {
+      serviceAccount = require(localKeyPath);
+    } else if (require('fs').existsSync(rootKeyPath)) {
+      serviceAccount = require(rootKeyPath);
+    }
+
+    if (serviceAccount) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${serviceAccount.project_id}.appspot.com`,
+      });
+      console.log('✅ Firebase initialized with local service account file');
+      return;
+    }
+
+    // 2. Fallback to Environment Variables (Best for Render/Production)
     if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL) {
-      // 1. Get raw key and trim whitespace
       let privateKey = process.env.FIREBASE_PRIVATE_KEY.trim();
       
-      // 2. Remove all types of wrapping quotes (", ', or backticks)
-      privateKey = privateKey.replace(/^['"`]+|['"`]+$/g, '');
+      // Clean wrapping quotes
+      privateKey = privateKey.replace(/^['"`]|['"`]$/g, '');
       
-      // 3. Handle escaped newlines (\n -> actual newline)
-      // We do this twice to handle double-escaped strings common in some CI/CD environments
-      privateKey = privateKey.replace(/\\n/g, '\n').replace(/\\n/g, '\n');
+      // Fix double-escaped newlines
+      privateKey = privateKey.replace(/\\n/g, '\n');
       
-      // 4. Ensure it has the correct PEM headers
-      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-        privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}`;
+      // Final fallback for literal escaped newlines
+      if (!privateKey.includes('\n')) {
+        privateKey = privateKey.split('\\n').join('\n');
       }
-      if (!privateKey.includes('-----END PRIVATE KEY-----')) {
-        privateKey = `${privateKey}\n-----END PRIVATE KEY-----\n`;
-      }
-
-      // Safe Debug (Log only first/last few chars to avoid exposing key)
-      console.log('Firebase Key Check:');
-      console.log(`- Start: "${privateKey.substring(0, 25)}..."`);
-      console.log(`- End: "...${privateKey.substring(privateKey.length - 25).replace(/\n/g, '\\n')}"`);
-      console.log(`- Length: ${privateKey.length} chars`);
 
       admin.initializeApp({
         credential: admin.credential.cert({
@@ -54,45 +63,11 @@ const initializeFirebase = (): void => {
         storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
       });
       console.log('✅ Firebase initialized with environment variables');
-    } 
-    else {
-      // Fallback to local JSON file
-      try {
-        // Try multiple paths for deployment flexibility
-        const possiblePaths = [
-          path.resolve(__dirname, '../serviceAccountKey.json'), // Local dev
-          path.resolve(process.cwd(), 'serviceAccountKey.json'), // Render root
-          path.resolve(process.cwd(), '../serviceAccountKey.json'), // Render sibling
-        ];
-
-        let serviceAccount = null;
-        for (const p of possiblePaths) {
-          try {
-            if (require('fs').existsSync(p)) {
-              serviceAccount = require(p);
-              console.log(`✅ Firebase credentials found at: ${p}`);
-              break;
-            }
-          } catch (e) {}
-        }
-
-        if (!serviceAccount) throw new Error('Key file not found in possible paths');
-
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-          storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${serviceAccount.project_id}.appspot.com`,
-        });
-        console.log('✅ Firebase initialized with service account JSON file');
-      } catch (fileError) {
-        throw new Error('No Firebase credentials found (env or file)');
-      }
+    } else {
+      throw new Error('No Firebase credentials found (env or file)');
     }
   } catch (error) {
     console.error('❌ Firebase initialization error:', error);
-    // Absolute final fallback
-    if (admin.apps.length === 0) {
-      admin.initializeApp();
-    }
   }
 };
 

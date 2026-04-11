@@ -73,7 +73,7 @@ const FeatureQR = ({ user }: FeatureQRProps) => {
                   <div className="bg-white w-full h-full rounded-lg sm:rounded-xl p-3 flex items-center justify-center">
                     {/* Real Scannable QR Code */}
                     <QRCodeSVG 
-                      value={userData?.auraTreeSlug ? `https://auratree.site/${userData.auraTreeSlug}` : "https://auratree.site/demo"}
+                      value={userData?.auraTreeSlug ? `https://auratree.site/${userData.auraTreeSlug}` : "https://auratree.site"}
                       size={256}
                       bgColor={"#FFFFFF"}
                       fgColor={"#070913"}
