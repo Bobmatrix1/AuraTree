@@ -245,9 +245,9 @@ export const verifyPayment = asyncHandler(async (req: Request, res: Response) =>
   };
 
   // If it was a subscription-based payment, store the subscription code
-  if (transactionData?.subscription) {
-    subscriptionData.paystackSubscriptionCode = transactionData.subscription;
-    subscriptionData.paystackEmailToken = transactionData.customer?.email_token;
+  if ((transactionData as any)?.subscription) {
+    subscriptionData.paystackSubscriptionCode = (transactionData as any).subscription;
+    subscriptionData.paystackEmailToken = (transactionData as any).customer?.email_token;
   }
 
   await db.collection('users').doc(paymentData.userId).update({

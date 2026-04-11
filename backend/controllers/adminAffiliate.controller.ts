@@ -47,10 +47,9 @@ export const getAffiliateReferralsAdmin = asyncHandler(async (req: Request, res:
   referralsData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const referrals = [];
-  for (const data of referralsData) {
+  for (const data of referralsData as any[]) {
     const userDoc = await db.collection('users').doc(data.referredUserId).get();
     referrals.push({
-      id: data.id,
       ...data,
       user: userDoc.data()
     });
@@ -78,10 +77,9 @@ export const getAllWithdrawals = asyncHandler(async (req: Request, res: Response
   withdrawalsData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const withdrawals = [];
-  for (const data of withdrawalsData) {
+  for (const data of withdrawalsData as any[]) {
     const affiliateDoc = await db.collection('affiliates').doc(data.affiliateId).get();
     withdrawals.push({
-      id: data.id,
       ...data,
       affiliate: affiliateDoc.data()
     });

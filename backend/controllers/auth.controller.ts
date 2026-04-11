@@ -139,7 +139,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   const token = jwt.sign(
     { uid: userRecord.uid, email: userRecord.email },
     process.env.JWT_SECRET || 'aura-tree-secret',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
   );
 
   res.status(201).json({
@@ -186,7 +186,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const token = jwt.sign(
     { uid: userRecord.uid, email: userRecord.email, isAdmin: userData?.isAdmin || false },
     process.env.JWT_SECRET || 'aura-tree-secret',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
   );
 
   res.status(200).json({

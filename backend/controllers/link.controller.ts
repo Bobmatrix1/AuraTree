@@ -149,7 +149,7 @@ export const getLinks = asyncHandler(async (req: Request, res: Response) => {
   const isOwner = userId === auraTreeData?.userId;
 
   // Build query
-  let query = db
+  let query: any = db
     .collection('auraTrees')
     .doc(auraTreeId)
     .collection('links');
@@ -161,7 +161,7 @@ export const getLinks = asyncHandler(async (req: Request, res: Response) => {
 
   const linksSnapshot = await query.get();
 
-  let links = linksSnapshot.docs.map((doc) => ({
+  let links = linksSnapshot.docs.map((doc: any) => ({
     id: doc.id,
     ...doc.data(),
   }));

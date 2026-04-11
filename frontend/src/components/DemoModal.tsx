@@ -9,11 +9,11 @@ interface DemoModalProps {
 }
 
 const DEFAULT_LINKS = [
-  { id: '1', icon: SiYoutube, label: 'Latest YouTube Video', url: 'youtube.com', color: 'bg-[#FF0000]' },
-  { id: '2', icon: SiInstagram, label: 'Photography Portfolio', url: 'instagram.com', color: 'bg-gradient-to-tr from-[#FFB800] via-[#FF0000] to-[#D300C5]' },
-  { id: '3', icon: SiSpotify, label: 'Weekly Playlist', url: 'spotify.com', color: 'bg-[#1DB954]' },
-  { id: '4', icon: SiTiktok, label: 'Dance Challenge', url: 'tiktok.com', color: 'bg-[#000000]' },
-  { id: '5', icon: SiX, label: 'Daily Thoughts', url: 'twitter.com', color: 'bg-[#000000]' },
+  { id: '1', icon: SiYoutube as any, label: 'Latest YouTube Video', url: 'youtube.com', color: 'bg-[#FF0000]' },
+  { id: '2', icon: SiInstagram as any, label: 'Photography Portfolio', url: 'instagram.com', color: 'bg-gradient-to-tr from-[#FFB800] via-[#FF0000] to-[#D300C5]' },
+  { id: '3', icon: SiSpotify as any, label: 'Weekly Playlist', url: 'spotify.com', color: 'bg-[#1DB954]' },
+  { id: '4', icon: SiTiktok as any, label: 'Dance Challenge', url: 'tiktok.com', color: 'bg-[#000000]' },
+  { id: '5', icon: SiX as any, label: 'Daily Thoughts', url: 'twitter.com', color: 'bg-[#000000]' },
 ];
 
 const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
@@ -53,7 +53,7 @@ const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
     const url = input.value.toLowerCase();
     if (!url) return;
     
-    let platform = 'web', Icon = Sparkles, color = 'bg-aura-violet', title = 'New Link';
+    let platform = 'web', Icon: any = Sparkles, color = 'bg-aura-violet', title = 'New Link';
     if (url.includes('youtube')) { platform = 'youtube'; Icon = SiYoutube; color = 'bg-[#FF0000]'; title = 'My YouTube Channel'; }
     else if (url.includes('instagram')) { platform = 'instagram'; Icon = SiInstagram; color = 'bg-gradient-to-tr from-[#FFB800] via-[#FF0000] to-[#D300C5]'; title = 'Follow me on Insta'; }
     else if (url.includes('spotify')) { platform = 'spotify'; Icon = SiSpotify; color = 'bg-[#1DB954]'; title = 'Listen on Spotify'; }

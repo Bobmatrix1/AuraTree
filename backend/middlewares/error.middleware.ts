@@ -44,7 +44,7 @@ export const Errors = {
  * Global error handler middleware
  */
 export const errorHandler = (
-  err: Error | ApiError,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction

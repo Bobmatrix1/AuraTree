@@ -20,10 +20,19 @@
     "strictPropertyInitialization": false
   },
   "include": [
-    "**/*.ts"
+    "index.ts",
+    "app.ts",
+    "config/**/*.ts",
+    "controllers/**/*.ts",
+    "middlewares/**/*.ts",
+    "routes/**/*.ts",
+    "utils/**/*.ts",
+    "scripts/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }

@@ -13,7 +13,7 @@ const storage = multer.memoryStorage();
 // File filter for images only
 const fileFilter = (
   req: Request,
-  file: Express.Multer.File,
+  file: any,
   cb: multer.FileFilterCallback
 ): void => {
   const allowedMimes = [
@@ -120,7 +120,7 @@ export const uploadMultipleImages = (fieldName: string, maxCount: number = 5) =>
  */
 export const getUploadedFile = (
   req: Request
-): Express.Multer.File | undefined => {
+): any | undefined => {
   return req.file;
 };
 
@@ -129,8 +129,8 @@ export const getUploadedFile = (
  */
 export const getUploadedFiles = (
   req: Request
-): Express.Multer.File[] | undefined => {
-  return req.files as Express.Multer.File[];
+): any[] | undefined => {
+  return req.files as any[];
 };
 
 export default {

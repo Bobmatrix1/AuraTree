@@ -994,12 +994,12 @@ export const addTeamMember = asyncHandler(async (req: Request, res: Response) =>
   if (!auraTreeDoc.exists) throw Errors.NotFound('Aura Tree not found');
 
   const auraTreeData = auraTreeDoc.data();
-  if (auraTreeData?.userId !== userId) {
+  if (!userId || auraTreeData?.userId !== userId) {
     throw Errors.Forbidden('Only the owner can add team members');
   }
 
   // Check plan
-  const userDoc = await db.collection('users').doc(userId).get();
+  const userDoc = await db.collection('users').doc(userId as string).get();
   const plan = userDoc.data()?.subscription?.plan || 'free';
   if (plan !== 'teams') {
     throw Errors.Forbidden('Team members are only available on the Teams plan');

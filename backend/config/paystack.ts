@@ -67,7 +67,7 @@ export const initializeTransaction = async (
     });
 
     const data = await response.json();
-    return data;
+    return data as any;
   } catch (error) {
     console.error('Paystack initialize transaction error:', error);
     throw error;
@@ -105,7 +105,7 @@ export const verifyTransaction = async (
     });
 
     const data = await response.json();
-    return data;
+    return data as any;
   } catch (error) {
     console.error('Paystack verify transaction error:', error);
     throw error;
@@ -144,7 +144,7 @@ export const createPlan = async (
     });
 
     const data = await response.json();
-    return data;
+    return data as any;
   } catch (error) {
     console.error('Paystack create plan error:', error);
     throw error;
@@ -182,7 +182,7 @@ export const createSubscription = async (
     });
 
     const data = await response.json();
-    return data;
+    return data as any;
   } catch (error) {
     console.error('Paystack create subscription error:', error);
     throw error;
@@ -213,7 +213,7 @@ export const disableSubscription = async (
     });
 
     const data = await response.json();
-    return data;
+    return data as any;
   } catch (error) {
     console.error('Paystack disable subscription error:', error);
     throw error;
@@ -239,7 +239,7 @@ export const fetchSubscription = async (
     });
 
     const data = await response.json();
-    return data;
+    return data as any;
   } catch (error) {
     console.error('Paystack fetch subscription error:', error);
     throw error;

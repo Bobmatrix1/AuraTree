@@ -180,7 +180,7 @@ export const getReferrals = asyncHandler(async (req: Request, res: Response) => 
   });
 
   const referrals = [];
-  for (const data of referralsData) {
+  for (const data of referralsData as any[]) {
     // Get referred user details
     const userDoc = await db.collection('users').doc(data.referredUserId).get();
     const userData = userDoc.data();

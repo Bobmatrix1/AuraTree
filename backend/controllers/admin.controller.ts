@@ -280,7 +280,7 @@ export const getAuraTrees = asyncHandler(async (req: Request, res: Response) => 
     let trees = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
     if (search) {
       const s = (search as string).toLowerCase();
-      trees = trees.filter(t => t.slug?.toLowerCase().includes(s) || t.displayName?.toLowerCase().includes(s));
+      trees = trees.filter((t: any) => t.slug?.toLowerCase().includes(s) || t.displayName?.toLowerCase().includes(s));
     }
     const total = trees.length;
     const startIndex = (Number(page) - 1) * Number(limit);
@@ -323,7 +323,7 @@ export const getPayments = asyncHandler(async (req: Request, res: Response) => {
   if (status && status !== 'all') query = query.where('status', '==', status);
 
   const snapshot = await query.get();
-  const rawPayments = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const rawPayments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
   const total = rawPayments.length;
   const startIndex = (pageNum - 1) * limitNum;
   const paginatedPayments = rawPayments.slice(startIndex, startIndex + limitNum);
@@ -504,7 +504,7 @@ export const getSubscribers = asyncHandler(async (req: Request, res: Response) =
     .offset((pageNum - 1) * limitNum)
     .get();
 
-  const subscribers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const subscribers = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
   res.status(200).json({
     success: true,
@@ -530,7 +530,7 @@ export const sendNewsletter = asyncHandler(async (req: Request, res: Response) =
   const { subject, content, recipientId } = req.body;
 
   if (!subject || !content) {
-    throw new Errors.BadRequestError('Subject and content are required');
+    throw Errors.BadRequest('Subject and content are required');
   }
 
   let recipients: string[] = [];
@@ -546,7 +546,7 @@ export const sendNewsletter = asyncHandler(async (req: Request, res: Response) =
   }
 
   if (recipients.length === 0) {
-    throw new Errors.NotFoundError('No recipients found');
+    throw Errors.NotFound('No recipients found');
   }
 
   // Send via Resend using verified domain
@@ -573,7 +573,7 @@ export const sendNewsletter = asyncHandler(async (req: Request, res: Response) =
 
   if (error) {
     console.error('Resend API Error Detail:', JSON.stringify(error, null, 2));
-    throw new Errors.ApiError(500, `Resend Error: ${error.message}`);
+    throw Errors.Internal(`Resend Error: ${error.message}`);
   }
 
   res.status(200).json({ success: true, message: `Email sent to ${recipients.length} recipients` });
