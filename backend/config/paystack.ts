@@ -50,7 +50,7 @@ export const initializeTransaction = async (
       email,
       amount: amount, // Amount is already in kobo from PLANS config
       metadata,
-      callback_url: `${process.env.API_URL || 'http://localhost:5000/api/v1'}/payments/verify`,
+      callback_url: `${process.env.FRONTEND_URL || 'http://localhost:5175'}/dashboard?tab=settings`,
     };
 
     if (plan) {
