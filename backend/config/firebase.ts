@@ -8,6 +8,7 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
