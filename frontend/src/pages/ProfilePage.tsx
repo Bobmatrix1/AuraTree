@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   SiYoutube, SiInstagram, SiTiktok, SiX, SiSpotify, 
-  SiApplemusic, SiSoundcloud, SiTwitch, SiGithub, SiLinkedin, 
+  SiApplemusic, SiSoundcloud, SiTwitch, SiGithub, 
   SiFacebook, SiWhatsapp, SiTelegram, SiDiscord, SiSnapchat, 
   SiPinterest, SiReddit, SiMedium, SiSubstack, SiPatreon, 
   SiBuymeacoffee, SiPaypal, SiVenmo, SiCashapp, SiOnlyfans, 
-  SiKofi, SiEtsy, SiAmazon, SiShopify, 
+  SiKofi, SiEtsy, SiShopify, 
   SiBehance, SiFigma, SiNotion, SiCalendly, 
   SiLinktree, SiThreads, SiGitlab, SiBitbucket, SiStackoverflow,
   SiCodepen, SiCodesandbox, SiNpm, SiFramer, SiProducthunt,
@@ -15,7 +15,7 @@ import {
   SiGumroad, SiFlickr, SiArtstation, SiDeviantart, SiUnsplash,
   SiVsco, SiZoom, SiCanva, SiBento
 } from 'react-icons/si';
-import { FaSkype } from 'react-icons/fa6';
+import { FaSkype, FaLinkedin, FaAmazon } from 'react-icons/fa6';
 import { Link as LucideLinkIcon, Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { API_V1_URL } from '../config/api';
@@ -34,7 +34,7 @@ const getPlatformDetails = (platform: string) => {
     twitch: { icon: SiTwitch, color: '#9146FF' },
     github: { icon: SiGithub, color: '#181717' },
     gitlab: { icon: SiGitlab, color: '#FC6D26' },
-    linkedin: { icon: SiLinkedin, color: '#0A66C2' },
+    linkedin: { icon: FaLinkedin, color: '#0A66C2' },
     facebook: { icon: SiFacebook, color: '#1877F2' },
     whatsapp: { icon: SiWhatsapp, color: '#25D366' },
     telegram: { icon: SiTelegram, color: '#26A5E4' },
@@ -52,7 +52,7 @@ const getPlatformDetails = (platform: string) => {
     onlyfans: { icon: SiOnlyfans, color: '#00AFF0' },
     kofi: { icon: SiKofi, color: '#FF5E5B' },
     etsy: { icon: SiEtsy, color: '#F56400' },
-    amazon: { icon: SiAmazon, color: '#FF9900' },
+    amazon: { icon: FaAmazon, color: '#FF9900' },
     shopify: { icon: SiShopify, color: '#96BF48' },
     behance: { icon: SiBehance, color: '#1769FF' },
     figma: { icon: SiFigma, color: '#F24E1E' },
