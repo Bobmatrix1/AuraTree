@@ -14,17 +14,21 @@ import { sanitizeString } from '../utils/helpers';
  * GET /api/v1/testimonials
  */
 export const getTestimonials = asyncHandler(async (req: Request, res: Response) => {
+  // Fetch latest testimonials without filtering by status first to avoid composite index requirement
   const testimonialsSnapshot = await db
     .collection('testimonials')
-    .where('status', '==', 'approved')
     .orderBy('createdAt', 'desc')
-    .limit(10)
+    .limit(50)
     .get();
 
-  const testimonials = testimonialsSnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
+  // Filter for approved ones in memory
+  const testimonials = testimonialsSnapshot.docs
+    .map((doc: any) => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+    .filter((t: any) => t.status === 'approved')
+    .slice(0, 10);
 
   res.status(200).json({
     success: true,
