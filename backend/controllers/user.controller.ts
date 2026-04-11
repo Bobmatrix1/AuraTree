@@ -170,8 +170,12 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
   if (auraTreeId) {
     const auraTreeRef = db.collection('auraTrees').doc(auraTreeId);
     const auraTreeDoc = await auraTreeRef.get();
+    const auraTreeData = auraTreeDoc.data();
     
-    if (!auraTreeDoc.exists || auraTreeDoc.data()?.userId !== userId) {
+    const isOwner = auraTreeData?.userId === userId;
+    const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+    if (!auraTreeDoc.exists || (!isOwner && !isMember)) {
       throw Errors.Forbidden('Invalid Aura Tree ID or access denied');
     }
 
@@ -225,8 +229,12 @@ export const deleteAvatar = asyncHandler(async (req: Request, res: Response) => 
 
   if (auraTreeId) {
     const auraTreeDoc = await db.collection('auraTrees').doc(auraTreeId).get();
-    if (auraTreeDoc.exists && auraTreeDoc.data()?.userId === userId) {
-      avatarPublicId = auraTreeDoc.data()?.avatarPublicId;
+    const auraTreeData = auraTreeDoc.data();
+    const isOwner = auraTreeData?.userId === userId;
+    const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+    if (auraTreeDoc.exists && (isOwner || isMember)) {
+      avatarPublicId = auraTreeData?.avatarPublicId;
       
       // Update Aura Tree
       await db.collection('auraTrees').doc(auraTreeId).update({

@@ -41,7 +41,7 @@ interface AffiliateData {
   };
 }
 
-const AffiliateSection = ({ userData }: { userData: any }) => {
+const AffiliateSection = ({ userData, auraTreeId }: { userData: any, auraTreeId?: string }) => {
   const [isAffiliate, setIsAffiliate] = useState(userData?.isAffiliate || false);
   const [loading, setLoading] = useState(true);
   const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
@@ -95,7 +95,10 @@ const AffiliateSection = ({ userData }: { userData: any }) => {
   const fetchAffiliateData = async () => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      const response = await fetch(`${API_V1_URL}/affiliates/me`, {
+      const url = new URL(`${API_V1_URL}/affiliates/me`);
+      if (auraTreeId) url.searchParams.append('auraTreeId', auraTreeId);
+      
+      const response = await fetch(url.toString(), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -112,7 +115,10 @@ const AffiliateSection = ({ userData }: { userData: any }) => {
   const fetchReferrals = async () => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      const response = await fetch(`${API_V1_URL}/affiliates/referrals`, {
+      const url = new URL(`${API_V1_URL}/affiliates/referrals`);
+      if (auraTreeId) url.searchParams.append('auraTreeId', auraTreeId);
+
+      const response = await fetch(url.toString(), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -125,13 +131,20 @@ const AffiliateSection = ({ userData }: { userData: any }) => {
   };
 
   useEffect(() => {
-    if (isAffiliate) {
-      fetchAffiliateData();
-      fetchReferrals();
-    } else {
-      setLoading(false);
+    fetchAffiliateData();
+    fetchReferrals();
+  }, [auraTreeId]);
+
+  // If auraTreeId is provided, we might be viewing the team's affiliate data
+  // Only show registration if not viewing a team or if the owner themselves is not an affiliate
+  const showRegistration = !isAffiliate && !auraTreeId;
+
+  // Re-check isAffiliate status if we get data
+  useEffect(() => {
+    if (affiliateData) {
+      setIsAffiliate(true);
     }
-  }, [isAffiliate]);
+  }, [affiliateData]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

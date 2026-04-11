@@ -148,6 +148,7 @@ export const createAuraTree = asyncHandler(async (req: Request, res: Response) =
     clickCount: 0,
     qrScanCount: 0,
     isActive: true,
+    teamMembers: [], // Initialize empty team members array
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -288,21 +289,36 @@ export const getAuraTreeBySlug = asyncHandler(async (req: Request, res: Response
 });
 
 /**
- * List all user's Aura Trees
+ * List all user's Aura Trees (including those where user is a team member)
  * GET /auratree/list
  */
 export const listMyAuraTrees = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userId;
   if (!userId) throw Errors.Unauthorized('Authentication required');
 
-  const snapshot = await db.collection('auraTrees')
+  // Find trees where user is owner
+  const ownedSnapshot = await db.collection('auraTrees')
     .where('userId', '==', userId)
     .get();
 
-  let trees = snapshot.docs.map(doc => ({
+  // Find trees where user is a team member
+  const teamSnapshot = await db.collection('auraTrees')
+    .where('teamMembers', 'array-contains', userId)
+    .get();
+
+  const ownedTrees = ownedSnapshot.docs.map(doc => ({
     id: doc.id,
+    role: 'owner',
     ...doc.data()
   }));
+
+  const teamTrees = teamSnapshot.docs.map(doc => ({
+    id: doc.id,
+    role: 'member',
+    ...doc.data()
+  }));
+
+  let trees = [...ownedTrees, ...teamTrees];
 
   // Sort in memory
   trees.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -324,17 +340,40 @@ export const getMyAuraTree = asyncHandler(async (req: Request, res: Response) =>
     throw Errors.Unauthorized('Authentication required');
   }
 
-  const auraTreeSnapshot = await db
-    .collection('auraTrees')
-    .where('userId', '==', userId)
-    .limit(1)
-    .get();
+  // First check if user has a primary tree assigned
+  const userDoc = await db.collection('users').doc(userId).get();
+  const userData = userDoc.data();
+  const primaryTreeId = userData?.auraTreeId;
 
-  if (auraTreeSnapshot.empty) {
-    throw Errors.NotFound('You do not have an Aura Tree yet');
+  let auraTreeDoc;
+  if (primaryTreeId) {
+    auraTreeDoc = await db.collection('auraTrees').doc(primaryTreeId).get();
   }
 
-  const auraTreeDoc = auraTreeSnapshot.docs[0];
+  // If no primary tree or primary tree doesn't exist, fallback to first owned or team tree
+  if (!auraTreeDoc || !auraTreeDoc.exists) {
+    const auraTreeSnapshot = await db
+      .collection('auraTrees')
+      .where('userId', '==', userId)
+      .limit(1)
+      .get();
+    
+    if (auraTreeSnapshot.empty) {
+      // Check for team trees
+      const teamSnapshot = await db.collection('auraTrees')
+        .where('teamMembers', 'array-contains', userId)
+        .limit(1)
+        .get();
+      
+      if (teamSnapshot.empty) {
+        throw Errors.NotFound('You do not have an Aura Tree yet');
+      }
+      auraTreeDoc = teamSnapshot.docs[0];
+    } else {
+      auraTreeDoc = auraTreeSnapshot.docs[0];
+    }
+  }
+
   const auraTreeData = auraTreeDoc.data();
 
   // Get all links (including hidden ones)
@@ -356,7 +395,8 @@ export const getMyAuraTree = asyncHandler(async (req: Request, res: Response) =>
       id: auraTreeDoc.id,
       ...auraTreeData,
       links,
-      publicUrl: getAuraTreeUrl(auraTreeData.slug),
+      publicUrl: getAuraTreeUrl(auraTreeData!.slug),
+      role: auraTreeData!.userId === userId ? 'owner' : 'member'
     },
   });
 });
@@ -375,16 +415,6 @@ export const updateAuraTree = asyncHandler(async (req: Request, res: Response) =
   const { id } = req.params;
   const { displayName, bio, theme, isActive } = req.body;
 
-  // Get user info to check subscription
-  const userDoc = await db.collection('users').doc(userId).get();
-  const userData = userDoc.data();
-  const plan = userData?.subscription?.plan || 'free';
-
-  // TIERED RULE: Only paid users can change themes
-  if (theme !== undefined && plan === 'free') {
-    throw Errors.Forbidden('Theme customization is only available on Pro or Teams plans');
-  }
-
   // Get Aura Tree
   const auraTreeDoc = await db.collection('auraTrees').doc(id).get();
 
@@ -394,9 +424,22 @@ export const updateAuraTree = asyncHandler(async (req: Request, res: Response) =
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
+  }
+
+  // Get owner's plan info
+  const ownerDoc = await db.collection('users').doc(auraTreeData!.userId).get();
+  const ownerData = ownerDoc.data();
+  const plan = ownerData?.subscription?.plan || 'free';
+
+  // TIERED RULE: Only paid users can change themes
+  if (theme !== undefined && plan === 'free') {
+    throw Errors.Forbidden('Theme customization is only available on Pro or Teams plans');
   }
 
   // Build updates
@@ -413,7 +456,7 @@ export const updateAuraTree = asyncHandler(async (req: Request, res: Response) =
   }
 
   if (theme !== undefined) {
-    updates.theme = { ...auraTreeData.theme, ...theme };
+    updates.theme = { ...auraTreeData!.theme, ...theme };
   }
 
   if (isActive !== undefined) {
@@ -447,17 +490,34 @@ export const updateSlug = asyncHandler(async (req: Request, res: Response) => {
     throw Errors.Unauthorized('Authentication required');
   }
 
-  // Get user info to check subscription
-  const userDoc = await db.collection('users').doc(userId).get();
-  const userData = userDoc.data();
-  const plan = userData?.subscription?.plan || 'free';
+  const { id } = req.params;
+  let { slug } = req.body;
+
+  // Get Aura Tree
+  const auraTreeDoc = await db.collection('auraTrees').doc(id).get();
+
+  if (!auraTreeDoc.exists) {
+    throw Errors.NotFound('Aura Tree not found');
+  }
+
+  const auraTreeData = auraTreeDoc.data();
+
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
+  }
+
+  // Get owner info to check subscription
+  const ownerDoc = await db.collection('users').doc(auraTreeData!.userId).get();
+  const ownerData = ownerDoc.data();
+  const plan = ownerData?.subscription?.plan || 'free';
 
   if (plan === 'free') {
     throw Errors.Forbidden('Custom links are only available on Pro or Teams plans');
   }
-
-  const { id } = req.params;
-  let { slug } = req.body;
 
   if (!slug) {
     throw Errors.BadRequest('Slug is required');
@@ -483,20 +543,6 @@ export const updateSlug = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
-  // Get Aura Tree
-  const auraTreeDoc = await db.collection('auraTrees').doc(id).get();
-
-  if (!auraTreeDoc.exists) {
-    throw Errors.NotFound('Aura Tree not found');
-  }
-
-  const auraTreeData = auraTreeDoc.data();
-
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
-  }
-
   // Generate new QR Code
   const newUrl = getAuraTreeUrl(processedSlug);
   const qrCodeResult = await generateQRCode(newUrl, processedSlug);
@@ -515,11 +561,13 @@ export const updateSlug = asyncHandler(async (req: Request, res: Response) => {
     updatedAt: new Date().toISOString(),
   });
 
-  // Update user document
-  await db.collection('users').doc(userId).update({
-    auraTreeSlug: processedSlug,
-    updatedAt: new Date().toISOString(),
-  });
+  // Update owner's document if this was their primary tree
+  if (ownerData?.auraTreeId === id) {
+    await db.collection('users').doc(auraTreeData!.userId).update({
+      auraTreeSlug: processedSlug,
+      updatedAt: new Date().toISOString(),
+    });
+  }
 
   res.status(200).json({
     success: true,
@@ -545,19 +593,6 @@ export const uploadBackground = asyncHandler(async (req: Request, res: Response)
 
   const { id } = req.params;
 
-  // Get user info to check subscription
-  const userDoc = await db.collection('users').doc(userId).get();
-  const userData = userDoc.data();
-  const plan = userData?.subscription?.plan || 'free';
-
-  if (plan === 'free') {
-    throw Errors.Forbidden('Custom backgrounds are only available on Pro or Teams plans');
-  }
-
-  if (!req.file) {
-    throw Errors.BadRequest('No image file provided');
-  }
-
   // Get Aura Tree
   const auraTreeDoc = await db.collection('auraTrees').doc(id).get();
 
@@ -567,9 +602,25 @@ export const uploadBackground = asyncHandler(async (req: Request, res: Response)
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
+  }
+
+  // Get owner info to check subscription
+  const ownerDoc = await db.collection('users').doc(auraTreeData!.userId).get();
+  const ownerData = ownerDoc.data();
+  const plan = ownerData?.subscription?.plan || 'free';
+
+  if (plan === 'free') {
+    throw Errors.Forbidden('Custom backgrounds are only available on Pro or Teams plans');
+  }
+
+  if (!req.file) {
+    throw Errors.BadRequest('No image file provided');
   }
 
   // Delete old background if exists
@@ -622,9 +673,9 @@ export const deleteAuraTree = asyncHandler(async (req: Request, res: Response) =
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
+  // ONLY Owner can delete
   if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+    throw Errors.Forbidden('Only the owner can delete this Aura Tree');
   }
 
   // Delete QR Code from Cloudinary
@@ -713,9 +764,12 @@ export const getAnalytics = asyncHandler(async (req: Request, res: Response) => 
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
   }
 
   // 1. Get link click counts
@@ -891,8 +945,11 @@ export const getAuraTreeById = asyncHandler(async (req: Request, res: Response) 
 
   const data = auraTreeDoc.data();
 
-  // Security: Only the owner can fetch their tree details via this private endpoint
-  if (data?.userId !== userId) {
+  // Check ownership or team membership
+  const isOwner = data?.userId === userId;
+  const isMember = data?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
     throw Errors.Forbidden('You do not have permission to view this page');
   }
 
@@ -917,7 +974,142 @@ export const getAuraTreeById = asyncHandler(async (req: Request, res: Response) 
       id: auraTreeDoc.id,
       ...data,
       links,
+      role: isOwner ? 'owner' : 'member'
     },
+  });
+});
+
+/**
+ * Add a team member
+ * POST /auratree/:id/members
+ */
+export const addTeamMember = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.userId;
+  const { id } = req.params;
+  const { email } = req.body;
+
+  if (!email) throw Errors.BadRequest('Member email is required');
+
+  const auraTreeDoc = await db.collection('auraTrees').doc(id).get();
+  if (!auraTreeDoc.exists) throw Errors.NotFound('Aura Tree not found');
+
+  const auraTreeData = auraTreeDoc.data();
+  if (auraTreeData?.userId !== userId) {
+    throw Errors.Forbidden('Only the owner can add team members');
+  }
+
+  // Check plan
+  const userDoc = await db.collection('users').doc(userId).get();
+  const plan = userDoc.data()?.subscription?.plan || 'free';
+  if (plan !== 'teams') {
+    throw Errors.Forbidden('Team members are only available on the Teams plan');
+  }
+
+  // Check limit
+  const currentMembers = auraTreeData?.teamMembers || [];
+  if (currentMembers.length >= 5) {
+    throw Errors.Forbidden('Maximum of 5 team members reached');
+  }
+
+  // Find user by email
+  const memberUserSnapshot = await db.collection('users')
+    .where('email', '==', email.toLowerCase())
+    .limit(1)
+    .get();
+
+  if (memberUserSnapshot.empty) {
+    throw Errors.NotFound('User with this email not found on Aura Tree');
+  }
+
+  const memberUserId = memberUserSnapshot.docs[0].id;
+
+  if (memberUserId === userId) {
+    throw Errors.BadRequest('You cannot add yourself as a team member');
+  }
+
+  if (currentMembers.includes(memberUserId)) {
+    throw Errors.Conflict('User is already a team member');
+  }
+
+  await db.collection('auraTrees').doc(id).update({
+    teamMembers: fieldValue.arrayUnion(memberUserId),
+    updatedAt: new Date().toISOString()
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Team member added successfully'
+  });
+});
+
+/**
+ * Remove a team member
+ * DELETE /auratree/:id/members/:memberId
+ */
+export const removeTeamMember = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.userId;
+  const { id, memberId } = req.params;
+
+  const auraTreeDoc = await db.collection('auraTrees').doc(id).get();
+  if (!auraTreeDoc.exists) throw Errors.NotFound('Aura Tree not found');
+
+  const auraTreeData = auraTreeDoc.data();
+  if (auraTreeData?.userId !== userId) {
+    throw Errors.Forbidden('Only the owner can remove team members');
+  }
+
+  await db.collection('auraTrees').doc(id).update({
+    teamMembers: fieldValue.arrayRemove(memberId),
+    updatedAt: new Date().toISOString()
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Team member removed successfully'
+  });
+});
+
+/**
+ * Get team members for an Aura Tree
+ * GET /auratree/:id/members
+ */
+export const getTeamMembers = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.userId;
+  const { id } = req.params;
+
+  const auraTreeDoc = await db.collection('auraTrees').doc(id).get();
+  if (!auraTreeDoc.exists) throw Errors.NotFound('Aura Tree not found');
+
+  const auraTreeData = auraTreeDoc.data();
+  
+  // Only owner or member can see the team list
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('Access denied');
+  }
+
+  const memberIds = auraTreeData?.teamMembers || [];
+  const members = [];
+
+  for (const mId of memberIds) {
+    const userDoc = await db.collection('users').doc(mId).get();
+    if (userDoc.exists) {
+      const uData = userDoc.data();
+      members.push({
+        id: mId,
+        displayName: uData?.displayName,
+        email: uData?.email,
+        avatarUrl: uData?.avatarUrl,
+        username: uData?.username
+      });
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    data: members
   });
 });
 
@@ -933,4 +1125,7 @@ export default {
   deleteAuraTree,
   getAnalytics,
   trackQRScan,
+  addTeamMember,
+  removeTeamMember,
+  getTeamMembers
 };

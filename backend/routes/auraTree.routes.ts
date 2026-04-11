@@ -16,6 +16,9 @@ import {
   deleteAuraTree,
   getAnalytics,
   trackQRScan,
+  addTeamMember,
+  removeTeamMember,
+  getTeamMembers,
 } from '../controllers/auraTree.controller';
 import { verifyToken, optionalAuth } from '../middlewares/auth.middleware';
 import { uploadSingleImage } from '../middlewares/upload.middleware';
@@ -72,5 +75,13 @@ router.put('/:id/slug', verifyToken, idParamValidation, slugValidation, updateSl
 router.post('/:id/background', verifyToken, idParamValidation, uploadSingleImage('background'), uploadBackground);
 router.delete('/:id', verifyToken, idParamValidation, deleteAuraTree);
 router.get('/:id/analytics', verifyToken, idParamValidation, getAnalytics);
+
+// Team management routes
+router.post('/:id/members', verifyToken, idParamValidation, [
+  body('email').isEmail().withMessage('Valid email is required'),
+  handleValidationErrors
+], addTeamMember);
+router.get('/:id/members', verifyToken, idParamValidation, getTeamMembers);
+router.delete('/:id/members/:memberId', verifyToken, idParamValidation, removeTeamMember);
 
 export default router;

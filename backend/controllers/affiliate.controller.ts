@@ -73,13 +73,29 @@ export const registerAffiliate = asyncHandler(async (req: Request, res: Response
 
 /**
  * Get affiliate dashboard data
- * GET /affiliates/me
+ * GET /affiliates/me?auraTreeId=...
  */
 export const getAffiliateData = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userId;
   if (!userId) throw Errors.Unauthorized('Authentication required');
 
-  const affiliateDoc = await db.collection('affiliates').doc(userId).get();
+  const { auraTreeId } = req.query;
+  let targetUserId = userId;
+
+  if (auraTreeId) {
+    const auraTreeDoc = await db.collection('auraTrees').doc(auraTreeId as string).get();
+    if (auraTreeDoc.exists) {
+      const auraTreeData = auraTreeDoc.data();
+      const isOwner = auraTreeData?.userId === userId;
+      const isMember = auraTreeData?.teamMembers?.includes(userId);
+      
+      if (isOwner || isMember) {
+        targetUserId = auraTreeData?.userId;
+      }
+    }
+  }
+
+  const affiliateDoc = await db.collection('affiliates').doc(targetUserId).get();
   if (!affiliateDoc.exists) {
     throw Errors.NotFound('Affiliate record not found');
   }
@@ -92,14 +108,30 @@ export const getAffiliateData = asyncHandler(async (req: Request, res: Response)
 
 /**
  * Get affiliate stats (over time, etc.)
- * GET /affiliates/stats
+ * GET /affiliates/stats?auraTreeId=...
  */
 export const getAffiliateStats = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userId;
   if (!userId) throw Errors.Unauthorized('Authentication required');
 
+  const { auraTreeId } = req.query;
+  let targetUserId = userId;
+
+  if (auraTreeId) {
+    const auraTreeDoc = await db.collection('auraTrees').doc(auraTreeId as string).get();
+    if (auraTreeDoc.exists) {
+      const auraTreeData = auraTreeDoc.data();
+      const isOwner = auraTreeData?.userId === userId;
+      const isMember = auraTreeData?.teamMembers?.includes(userId);
+      
+      if (isOwner || isMember) {
+        targetUserId = auraTreeData?.userId;
+      }
+    }
+  }
+
   // For now return basic stats from affiliate doc
-  const affiliateDoc = await db.collection('affiliates').doc(userId).get();
+  const affiliateDoc = await db.collection('affiliates').doc(targetUserId).get();
   const data = affiliateDoc.data();
 
   // In a real app, we might query commissions and referrals to build charts
@@ -111,14 +143,30 @@ export const getAffiliateStats = asyncHandler(async (req: Request, res: Response
 
 /**
  * Get referred users
- * GET /affiliates/referrals
+ * GET /affiliates/referrals?auraTreeId=...
  */
 export const getReferrals = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userId;
   if (!userId) throw Errors.Unauthorized('Authentication required');
 
+  const { auraTreeId } = req.query;
+  let targetUserId = userId;
+
+  if (auraTreeId) {
+    const auraTreeDoc = await db.collection('auraTrees').doc(auraTreeId as string).get();
+    if (auraTreeDoc.exists) {
+      const auraTreeData = auraTreeDoc.data();
+      const isOwner = auraTreeData?.userId === userId;
+      const isMember = auraTreeData?.teamMembers?.includes(userId);
+      
+      if (isOwner || isMember) {
+        targetUserId = auraTreeData?.userId;
+      }
+    }
+  }
+
   const referralsSnapshot = await db.collection('affiliateReferrals')
-    .where('affiliateId', '==', userId)
+    .where('affiliateId', '==', targetUserId)
     .get();
 
   let referralsData = referralsSnapshot.docs.map(doc => ({

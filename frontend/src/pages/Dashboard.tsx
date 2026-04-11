@@ -33,7 +33,8 @@ import {
   Eye as LucideEye,
   EyeOff as LucideEyeOff,
   ChevronDown,
-  Trash2 as LucideTrash
+  Trash2 as LucideTrash,
+  Handshake as LucideHandshake
 } from 'lucide-react';
 import { 
   SiYoutube, SiInstagram, SiTiktok, SiX, SiSpotify, 
@@ -145,8 +146,8 @@ const THEMES = [
 const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') as any;
-  const [activeTab, setActiveTab] = useState<'links' | 'appearance' | 'analytics' | 'affiliate' | 'settings'>(
-    ['links', 'appearance', 'analytics', 'affiliate', 'settings'].includes(initialTab) ? initialTab : 'links'
+  const [activeTab, setActiveTab] = useState<'links' | 'appearance' | 'analytics' | 'affiliate' | 'settings' | 'team'>(
+    ['links', 'appearance', 'analytics', 'affiliate', 'settings', 'team'].includes(initialTab) ? initialTab : 'links'
   );
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any>(null);
@@ -157,6 +158,12 @@ const Dashboard = () => {
   // Analytics State
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [isFetchingAnalytics, setIsFetchingAnalytics] = useState(false);
+
+  // Team State
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [isFetchingTeam, setIsFetchingTeam] = useState(false);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
   
   // Multi-page State
   const [allAuraTrees, setAllAuraTrees] = useState<any[]>([]);
@@ -237,6 +244,75 @@ const Dashboard = () => {
     }
   };
 
+  const fetchTeamMembers = async () => {
+    if (!auraTree?.id) return;
+    setIsFetchingTeam(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const response = await fetch(`${API_V1_URL}/auratree/${auraTree.id}/members`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTeamMembers(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+    } finally {
+      setIsFetchingTeam(false);
+    }
+  };
+
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemberEmail || !auraTree?.id) return;
+    
+    setIsAddingMember(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const response = await fetch(`${API_V1_URL}/auratree/${auraTree.id}/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ email: newMemberEmail })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Team member added');
+        setNewMemberEmail('');
+        fetchTeamMembers();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      toast.error('Failed to add member', { description: error.message });
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!auraTree?.id) return;
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const response = await fetch(`${API_V1_URL}/auratree/${auraTree.id}/members/${memberId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Member removed');
+        fetchTeamMembers();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      toast.error('Failed to remove member');
+    }
+  };
+
   useEffect(() => {
     // Force enable body scrolling when entering the dashboard
     document.body.style.overflow = 'auto';
@@ -260,6 +336,9 @@ const Dashboard = () => {
 
     if (activeTab === 'analytics') {
       fetchAnalytics();
+    }
+    if (activeTab === 'team') {
+      fetchTeamMembers();
     }
   }, [activeTab, auraTree?.id]);
 
@@ -952,7 +1031,8 @@ const Dashboard = () => {
     { id: 'links', icon: LayoutDashboard, label: 'Links' },
     { id: 'appearance', icon: LucidePalette, label: 'Appearance' },
     { id: 'analytics', icon: LucideBarChart3, label: 'Analytics' },
-    { id: 'affiliate', icon: LucideUsers, label: 'Affiliate' },
+    { id: 'affiliate', icon: LucideHandshake, label: 'Affiliate' },
+    ...(userData?.subscription?.plan === 'teams' || auraTree?.teamMembers?.length > 0 || auraTree?.role === 'member' ? [{ id: 'team', icon: LucideUsers, label: 'Team' }] : []),
     { id: 'settings', icon: LucideSettings, label: 'Settings' },
   ];
 
@@ -965,6 +1045,7 @@ const Dashboard = () => {
   }
 
   const isFree = userData?.subscription?.plan === 'free';
+  const isOwner = auraTree?.role === 'owner';
 
   return (
     <div className="min-h-screen bg-aura-navy flex">
@@ -1051,7 +1132,10 @@ const Dashboard = () => {
                   {auraTree?.displayName?.charAt(0) || 'A'}
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-xs font-bold leading-none">{auraTree?.displayName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold leading-none">{auraTree?.displayName}</p>
+                    {auraTree?.role === 'member' && <span className="text-[8px] bg-aura-violet/20 text-aura-violet px-1.5 py-0.5 rounded-full uppercase font-bold">Team Member</span>}
+                  </div>
                   <p className="text-[10px] text-aura-text-secondary mt-1">/{auraTree?.slug}</p>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-aura-text-secondary transition-transform duration-300 ${isSwitcherOpen ? 'rotate-180' : ''}`} />
@@ -1076,22 +1160,27 @@ const Dashboard = () => {
                         </div>
                         <div className="text-left flex-1 min-w-0">
                           <p className="text-xs font-bold truncate">{tree.displayName}</p>
-                          <p className="text-[9px] opacity-60 truncate">/{tree.slug}</p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-[9px] opacity-60 truncate">/{tree.slug}</p>
+                            {tree.role === 'member' && <span className="text-[7px] text-aura-violet font-bold uppercase">Team</span>}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           {auraTree?.id === tree.id && <LucideCheck className="w-3 h-3 text-aura-violet" />}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeletingPage(tree);
-                              setShowDeletePageModal(true);
-                              setIsSwitcherOpen(false);
-                            }}
-                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-aura-text-secondary hover:text-red-500 transition-colors"
-                            title="Delete Page"
-                          >
-                            <LucideTrash className="w-3.5 h-3.5" />
-                          </button>
+                          {tree.role === 'owner' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingPage(tree);
+                                setShowDeletePageModal(true);
+                                setIsSwitcherOpen(false);
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-red-500/10 text-aura-text-secondary hover:text-red-500 transition-colors"
+                              title="Delete Page"
+                            >
+                              <LucideTrash className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1131,7 +1220,7 @@ const Dashboard = () => {
 
         <div className="flex-1 p-4 lg:p-8 overflow-y-auto" data-lenis-prevent>
           <div className="max-w-6xl mx-auto space-y-8">
-            {userData?.subscription?.plan !== 'teams' && (
+            {userData?.subscription?.plan !== 'teams' && isOwner && (
               <div className="glass-card p-6 border-aura-violet/30 bg-gradient-to-r from-aura-violet/10 to-transparent relative overflow-hidden group">
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="space-y-2 text-center md:text-left">
@@ -1170,7 +1259,7 @@ const Dashboard = () => {
               ))}
             </div>
 
-            {activeTab !== 'affiliate' && (
+            {activeTab !== 'affiliate' && activeTab !== 'team' && (
               <div className="glass-card p-8 border-aura-glass-border">
                 <h3 className="font-display font-bold text-xl text-aura-text mb-6">Profile Details</h3>
                 <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -1206,8 +1295,91 @@ const Dashboard = () => {
             )}
 
             <div id="dashboard-editor">
-              {activeTab === 'affiliate' && <AffiliateSection userData={userData} />}
-              <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12 ${activeTab === 'affiliate' ? 'hidden' : ''}`}>
+              {activeTab === 'affiliate' && <AffiliateSection userData={userData} auraTreeId={auraTree?.id} />}
+              {activeTab === 'team' && (
+                <div className="animate-in fade-in slide-in-from-bottom duration-500 space-y-8">
+                  <div className="glass-card p-6 lg:p-10 border-aura-glass-border">
+                    <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 mb-10">
+                      <div>
+                        <h2 className="font-display font-bold text-2xl lg:text-3xl text-aura-text">Team Management</h2>
+                        <p className="text-aura-text-secondary text-sm mt-2">Add up to 5 members to manage this Aura Page.</p>
+                      </div>
+                      {isOwner && (
+                        <form onSubmit={handleAddMember} className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                          <input 
+                            type="email" 
+                            placeholder="User Email" 
+                            required
+                            value={newMemberEmail}
+                            onChange={e => setNewMemberEmail(e.target.value)}
+                            className="flex-1 xl:w-72 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all text-sm"
+                          />
+                          <button 
+                            type="submit" 
+                            disabled={isAddingMember || teamMembers.length >= 5}
+                            className="px-8 py-3 rounded-2xl bg-aura-violet text-white font-bold hover:bg-aura-violet/90 transition-all disabled:opacity-50 whitespace-nowrap shadow-lg shadow-aura-violet/20"
+                          >
+                            {isAddingMember ? <LucideLoader2 className="w-5 h-5 animate-spin" /> : 'Add Member'}
+                          </button>
+                        </form>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      {isFetchingTeam ? (
+                        <div className="py-20 flex justify-center"><LucideLoader2 className="w-10 h-10 text-aura-violet animate-spin" /></div>
+                      ) : teamMembers.length === 0 ? (
+                        <div className="py-16 text-center bg-white/[0.02] rounded-[32px] border border-dashed border-white/10">
+                          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
+                            <LucideUsers className="w-8 h-8 text-aura-text-secondary opacity-30" />
+                          </div>
+                          <p className="text-aura-text-secondary font-medium">No team members added yet.</p>
+                          <p className="text-[10px] text-aura-text-secondary/50 uppercase tracking-widest mt-2">Team collaborative features will appear here</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {teamMembers.map((member) => (
+                            <div key={member.id} className="flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-aura-violet/30 transition-all group">
+                              <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-aura-violet/20 flex items-center justify-center overflow-hidden border-2 border-white/5">
+                                {member.avatarUrl ? <img src={member.avatarUrl} className="w-full h-full object-cover" /> : <span className="text-aura-violet font-bold text-lg">{member.displayName?.charAt(0)}</span>}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-aura-text truncate text-sm lg:text-base">{member.displayName}</p>
+                                <p className="text-xs text-aura-text-secondary truncate mt-0.5">{member.email}</p>
+                              </div>
+                              {isOwner && (
+                                <button 
+                                  onClick={() => handleRemoveMember(member.id)}
+                                  className="p-2.5 rounded-xl hover:bg-red-500/10 text-aura-text-secondary hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                  title="Remove Member"
+                                >
+                                  <LucideX className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-10 p-5 bg-aura-violet/5 border border-aura-violet/20 rounded-[24px]">
+                      <div className="flex gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-aura-violet/20 flex items-center justify-center shrink-0">
+                          <LucideShield className="w-5 h-5 text-aura-violet" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-aura-text uppercase tracking-widest mb-1.5">Permissions & Security</p>
+                          <p className="text-xs text-aura-text-secondary leading-relaxed max-w-2xl">
+                            Team members have limited administrative access. They can manage links, customize themes, and view real-time analytics. 
+                            <span className="text-aura-violet font-bold ml-1">Sensitive actions</span> like deleting the Aura page, managing the subscription, or removing other members are restricted to the account owner.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12 ${activeTab === 'affiliate' || activeTab === 'team' ? 'hidden' : ''}`}>
                 <div className="lg:col-span-7 space-y-6">
                   {activeTab === 'links' && (
                     <div className="glass-card flex flex-col shadow-2xl overflow-hidden border-aura-glass-border animate-in fade-in slide-in-from-left duration-500">

@@ -42,15 +42,18 @@ export const addLink = asyncHandler(async (req: Request, res: Response) => {
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
   }
 
-  // Get user info to check subscription
-  const userDoc = await db.collection('users').doc(userId).get();
-  const userData = userDoc.data();
-  const plan = userData?.subscription?.plan || 'free';
+  // Get user info to check subscription (use owner's info)
+  const ownerDoc = await db.collection('users').doc(auraTreeData!.userId).get();
+  const ownerData = ownerDoc.data();
+  const plan = ownerData?.subscription?.plan || 'free';
 
   // TIERED RULE: Free users limit (Now dynamic from System Settings)
   if (plan === 'free') {
@@ -196,9 +199,12 @@ export const updateLink = asyncHandler(async (req: Request, res: Response) => {
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
   }
 
   // Get link
@@ -296,9 +302,12 @@ export const deleteLink = asyncHandler(async (req: Request, res: Response) => {
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
   }
 
   // Delete link
@@ -349,9 +358,12 @@ export const reorderLinks = asyncHandler(async (req: Request, res: Response) => 
 
   const auraTreeData = auraTreeDoc.data();
 
-  // Check ownership
-  if (auraTreeData?.userId !== userId) {
-    throw Errors.Forbidden('You do not own this Aura Tree');
+  // Check ownership or team membership
+  const isOwner = auraTreeData?.userId === userId;
+  const isMember = auraTreeData?.teamMembers?.includes(userId);
+
+  if (!isOwner && !isMember) {
+    throw Errors.Forbidden('You do not have access to this Aura Tree');
   }
 
   // Update each link's order
