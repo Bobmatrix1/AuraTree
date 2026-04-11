@@ -8,8 +8,6 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import dotenv from 'dotenv';
-// @ts-ignore
-import serviceAccount from '../serviceAccountKey.json';
 
 dotenv.config();
 
@@ -20,18 +18,36 @@ const initializeFirebase = (): void => {
   }
 
   try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'aura-tree.firebasestorage.app',
-    });
-    console.log('✅ Firebase initialized with service account JSON file');
+    // Check for environment variables (Production/Render)
+    if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        } as admin.ServiceAccount),
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
+      });
+      console.log('✅ Firebase initialized with environment variables');
+    } 
+    else {
+      // Fallback to local JSON file
+      try {
+        const serviceAccount = require('../serviceAccountKey.json');
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'aura-tree.firebasestorage.app',
+        });
+        console.log('✅ Firebase initialized with service account JSON file');
+      } catch (fileError) {
+        throw new Error('No Firebase credentials found (env or file)');
+      }
+    }
   } catch (error) {
     console.error('❌ Firebase initialization error:', error);
-    // Fallback to basic project ID if file fails
+    // Absolute final fallback
     if (admin.apps.length === 0) {
-      admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || 'aura-tree',
-      });
+      admin.initializeApp();
     }
   }
 };
