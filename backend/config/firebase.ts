@@ -57,10 +57,29 @@ const initializeFirebase = (): void => {
     else {
       // Fallback to local JSON file
       try {
-        const serviceAccount = require('../serviceAccountKey.json');
+        // Try multiple paths for deployment flexibility
+        const possiblePaths = [
+          path.resolve(__dirname, '../serviceAccountKey.json'), // Local dev
+          path.resolve(process.cwd(), 'serviceAccountKey.json'), // Render root
+          path.resolve(process.cwd(), '../serviceAccountKey.json'), // Render sibling
+        ];
+
+        let serviceAccount = null;
+        for (const p of possiblePaths) {
+          try {
+            if (require('fs').existsSync(p)) {
+              serviceAccount = require(p);
+              console.log(`✅ Firebase credentials found at: ${p}`);
+              break;
+            }
+          } catch (e) {}
+        }
+
+        if (!serviceAccount) throw new Error('Key file not found in possible paths');
+
         admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
-          storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'aura-tree.firebasestorage.app',
+          storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${serviceAccount.project_id}.appspot.com`,
         });
         console.log('✅ Firebase initialized with service account JSON file');
       } catch (fileError) {
