@@ -82,7 +82,36 @@
 @layer base {
   * {
     @apply border-border;
-    /* Removed global transition to prevent lag during theme switch */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Improve mobile input experience */
+  input:focus, textarea:focus {
+    scroll-margin-top: 150px;
+    scroll-margin-bottom: 150px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Prevent jitter on mobile */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* GPU acceleration for common animations */
+  .animate-float, .animate-float-slow, .animate-pulse-glow, .starfield {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  /* Optimize rendering of long sections */
+  section {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 500px;
+  }
+
+  /* Immediate fix for laggy images */
+  img {
+    content-visibility: auto;
   }
 
   /* Target only color-based properties for smooth but fast switching */

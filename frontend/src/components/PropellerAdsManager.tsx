@@ -39,7 +39,7 @@ const PropellerAdsManager = () => {
     }
 
     // LAYER 3: Block for critical pages
-    const criticalPages = ['/checkout', '/admin'];
+    const criticalPages = ['/checkout', '/admin', '/login', '/signup'];
     if (criticalPages.some(page => location.pathname.startsWith(page))) {
       nuclearRemoveAds();
       return;
