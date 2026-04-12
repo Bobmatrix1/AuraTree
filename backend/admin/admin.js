@@ -436,27 +436,19 @@ async function loadDashboardData() {
   } catch (e) { console.error('Dashboard error:', e); }
 }
 
-function updateStatsDisplay(data) {
+function updateStatsDisplay(apiResponse) {
   try {
-    if (!data) {
-      console.error('No data provided to updateStatsDisplay');
-      return;
-    }
-    
-    console.log('Updating stats with:', data);
+    const data = apiResponse.data || apiResponse; 
+    if (!data) return;
     
     const setVal = (id, val) => { 
       const el = document.getElementById(id); 
       if (el) el.textContent = val; 
-      else console.warn(`Element #${id} not found`);
     };
     
     const setGrowth = (id, growth) => { 
       const el = document.getElementById(id); 
-      if (!el) {
-        console.warn(`Growth element #${id} not found`);
-        return; 
-      }
+      if (!el) return; 
       const numGrowth = parseFloat(growth) || 0;
       const isPositive = numGrowth >= 0; 
       el.textContent = `${isPositive ? '+' : ''}${numGrowth}%`; 
@@ -477,7 +469,15 @@ function updateStatsDisplay(data) {
     // Revenue Stats
     const revenueTotal = data.revenue?.total || 0;
     setVal('totalRevenue', '₦' + revenueTotal.toLocaleString());
-    setGrowth('revenueGrowth', data.revenue?.growth || 0);
+    
+    // Force set revenue growth specifically
+    const revGrowthEl = document.getElementById('revenueGrowth');
+    if (revGrowthEl) {
+      const rGrowth = parseFloat(data.revenue?.growth) || 0;
+      const isPos = rGrowth >= 0;
+      revGrowthEl.textContent = `${isPos ? '+' : ''}${rGrowth}%`;
+      revGrowthEl.className = `stat-change ${isPos ? 'positive' : 'negative'}`;
+    }
 
     // Subscription Breakdown
     const subStats = document.getElementById('subscriptionStats');
@@ -1024,19 +1024,21 @@ function renderAnalyticsCharts(data) {
   
   if (sDates.length > 0) {
     charts.signups = new Chart(document.getElementById('signupsChart'), {
-      type: 'line',
+      type: 'bar',
       data: {
-        labels: sDates,
+        labels: sDates.map(d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
         datasets: [{
           label: 'New Signups',
           data: sDates.map(d => signups[d]),
-          borderColor: '#7B61FF',
-          backgroundColor: 'rgba(123, 97, 255, 0.1)',
-          fill: true,
-          tension: 0.4
+          backgroundColor: '#7B61FF',
+          borderRadius: 4
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
     });
   }
 

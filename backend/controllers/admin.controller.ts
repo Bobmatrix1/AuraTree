@@ -12,133 +12,6 @@ import { resend } from '../config/resend';
 let statsCache: { data: any; timestamp: number } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-/**
- * Get dashboard statistics
- * GET /admin/stats
- */
-export const getStats = asyncHandler(async (req: Request, res: Response) => {
-  const now = Date.now();
-  
-  // 1. Return cached data if valid (Near-instant response)
-  if (statsCache && (now - statsCache.timestamp < CACHE_DURATION)) {
-    return res.status(200).json({ success: true, data: statsCache.data, fromCache: true });
-  }
-
-  const stats: any = {
-    users: { total: 0, growth: 0, online: 0 },
-    auraTrees: { total: 0, growth: 0 },
-    links: { total: 0, growth: 0 },
-    subscriptions: { free: 0, pro: 0, teams: 0 },
-    revenue: { total: 0, growth: 0, currency: 'NGN' },
-    analytics: {
-      countries: [],
-      regions: [],
-      devices: { mobile: 0, tablet: 0, desktop: 0 },
-      peakHours: new Array(24).fill(0)
-    }
-  };
-
-  const dateNow = new Date();
-  const fiveMinsAgo = new Date(dateNow.getTime() - 5 * 60 * 1000);
-  const sevenDaysAgo = new Date(dateNow.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const fourteenDaysAgo = new Date(dateNow.getTime() - 14 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(dateNow.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-  try {
-    // 2. Parallelized Scalable Queries
-    const [
-      totalUsers,
-      onlineUsers,
-      totalTrees,
-      totalLinks,
-      proCount,
-      teamsCount,
-      uRecent, uPrev,
-      tRecent, tPrev,
-      allPayments,
-      recentVisits
-    ] = await Promise.all([
-      db.collection('users').count().get(),
-      db.collection('users').where('lastActiveAt', '>=', fiveMinsAgo.toISOString()).count().get(),
-      db.collection('auraTrees').count().get(),
-      db.collectionGroup('links').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
-      db.collection('users').where('subscription.plan', '==', 'pro').count().get(),
-      db.collection('users').where('subscription.plan', '==', 'teams').count().get(),
-      db.collection('users').where('createdAt', '>=', sevenDaysAgo.toISOString()).count().get().catch(() => null),
-      db.collection('users').where('createdAt', '>=', fourteenDaysAgo.toISOString()).where('createdAt', '<', sevenDaysAgo.toISOString()).count().get().catch(() => null),
-      db.collection('auraTrees').where('createdAt', '>=', sevenDaysAgo.toISOString()).count().get().catch(() => null),
-      db.collection('auraTrees').where('createdAt', '>=', fourteenDaysAgo.toISOString()).where('createdAt', '<', sevenDaysAgo.toISOString()).count().get().catch(() => null),
-      db.collection('payments').where('status', '==', 'success').get(),
-      db.collection('unique_visits').where('createdAt', '>=', thirtyDaysAgo.toISOString()).get()
-    ]);
-
-    stats.users.total = totalUsers.data().count;
-    stats.users.online = onlineUsers.data().count;
-    stats.auraTrees.total = totalTrees.data().count;
-    stats.links.total = totalLinks.data().count;
-    
-    stats.subscriptions.pro = proCount.data().count;
-    stats.subscriptions.teams = teamsCount.data().count;
-    stats.subscriptions.free = stats.users.total - stats.subscriptions.pro - stats.subscriptions.teams;
-
-    if (uRecent && uPrev) stats.users.growth = calculateGrowth(uRecent.data().count, uPrev.data().count);
-    if (tRecent && tPrev) stats.auraTrees.growth = calculateGrowth(tRecent.data().count, tPrev.data().count);
-
-    const payments = allPayments.docs.map(d => d.data());
-    stats.revenue.total = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
-    const recentRev = payments.filter(p => p.createdAt >= sevenDaysAgo.toISOString()).reduce((acc, p) => acc + (p.amount || 0), 0);
-    const prevRev = payments.filter(p => p.createdAt >= fourteenDaysAgo.toISOString() && p.createdAt < sevenDaysAgo.toISOString()).reduce((acc, p) => acc + (p.amount || 0), 0);
-    stats.revenue.growth = calculateGrowth(recentRev, prevRev);
-
-    // 3. Process Advanced Analytics
-    const countryMap: { [key: string]: number } = {};
-    const regionMap: { [key: string]: number } = {};
-    
-    recentVisits.docs.forEach(doc => {
-      const data = doc.data();
-      
-      // Country
-      const country = data.country || 'Unknown';
-      countryMap[country] = (countryMap[country] || 0) + 1;
-      
-      // Region/State
-      if (data.region && data.region !== 'Unknown') {
-        regionMap[data.region] = (regionMap[data.region] || 0) + 1;
-      }
-      
-      // Device
-      if (data.device) {
-        stats.analytics.devices[data.device as keyof typeof stats.analytics.devices]++;
-      }
-      
-      // Peak Hours
-      if (data.createdAt) {
-        const hour = new Date(data.createdAt).getUTCHours();
-        stats.analytics.peakHours[hour]++;
-      }
-    });
-
-    // Convert maps to sorted arrays
-    stats.analytics.countries = Object.entries(countryMap)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    stats.analytics.regions = Object.entries(regionMap)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    // 4. Update Global Cache
-    statsCache = { data: stats, timestamp: now };
-
-    res.status(200).json({ success: true, data: stats });
-  } catch (error: any) {
-    console.error('Stats Sync Error:', error.message);
-    res.status(200).json({ success: true, data: stats, partial: true });
-  }
-});
-
 // Production Growth Formula
 function calculateGrowth(current: number, previous: number): number {
   if (previous === 0) return current > 0 ? 100 : 0;
@@ -146,7 +19,75 @@ function calculateGrowth(current: number, previous: number): number {
 }
 
 /**
- * Get advanced analytics (countries, devices, peak hours)
+ * Get dashboard statistics
+ * GET /admin/stats
+ */
+export const getStats = asyncHandler(async (req: Request, res: Response) => {
+  const now = Date.now();
+  
+  if (statsCache && (now - statsCache.timestamp < CACHE_DURATION)) {
+    return res.status(200).json({ success: true, data: statsCache.data, fromCache: true });
+  }
+
+  const dateNow = new Date();
+  const fiveMinsAgo = new Date(dateNow.getTime() - 5 * 60 * 1000);
+  const sevenDaysAgo = new Date(dateNow.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(dateNow.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  const [
+    totalUsers, onlineUsers, totalTrees, totalLinks,
+    proCount, teamsCount,
+    uRecent, uPrev,
+    tRecent, tPrev,
+    allPayments
+  ] = await Promise.all([
+    db.collection('users').count().get(),
+    db.collection('users').where('lastActiveAt', '>=', fiveMinsAgo.toISOString()).count().get(),
+    db.collection('auraTrees').count().get(),
+    db.collectionGroup('links').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
+    db.collection('users').where('subscription.plan', '==', 'pro').count().get(),
+    db.collection('users').where('subscription.plan', '==', 'teams').count().get(),
+    db.collection('users').where('createdAt', '>=', sevenDaysAgo.toISOString()).count().get(),
+    db.collection('users').where('createdAt', '>=', fourteenDaysAgo.toISOString()).where('createdAt', '<', sevenDaysAgo.toISOString()).count().get(),
+    db.collection('auraTrees').where('createdAt', '>=', sevenDaysAgo.toISOString()).count().get(),
+    db.collection('auraTrees').where('createdAt', '>=', fourteenDaysAgo.toISOString()).where('createdAt', '<', sevenDaysAgo.toISOString()).count().get(),
+    db.collection('payments').where('status', '==', 'success').get()
+  ]);
+
+  const payments = allPayments.docs.map(d => d.data());
+  const totalRev = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
+  const recentRev = payments.filter(p => p.createdAt >= sevenDaysAgo.toISOString()).reduce((acc, p) => acc + (p.amount || 0), 0);
+  const prevRev = payments.filter(p => p.createdAt >= fourteenDaysAgo.toISOString() && p.createdAt < sevenDaysAgo.toISOString()).reduce((acc, p) => acc + (p.amount || 0), 0);
+
+  const stats = {
+    users: { 
+      total: totalUsers.data().count || 0, 
+      online: onlineUsers.data().count || 0,
+      growth: calculateGrowth(uRecent.data().count, uPrev.data().count)
+    },
+    auraTrees: { 
+      total: totalTrees.data().count || 0,
+      growth: calculateGrowth(tRecent.data().count, tPrev.data().count)
+    },
+    links: { total: totalLinks.data().count || 0, growth: 0 },
+    revenue: { 
+      total: totalRev || 0, 
+      growth: calculateGrowth(recentRev, prevRev),
+      currency: 'NGN' 
+    },
+    subscriptions: {
+      pro: proCount.data().count || 0,
+      teams: teamsCount.data().count || 0,
+      free: (totalUsers.data().count || 0) - (proCount.data().count || 0) - (teamsCount.data().count || 0)
+    }
+  };
+
+  statsCache = { data: stats, timestamp: now };
+  res.status(200).json({ success: true, data: stats });
+});
+
+/**
+ * Get advanced analytics
  * GET /admin/analytics
  */
 export const getAdvancedAnalytics = asyncHandler(async (req: Request, res: Response) => {
@@ -176,29 +117,38 @@ export const getAdvancedAnalytics = asyncHandler(async (req: Request, res: Respo
 
   visitsSnapshot.docs.forEach(doc => {
     const data = doc.data();
-    const c = data.country || 'Unknown';
-    const r = data.region || 'Unknown';
+    // Geolocation
+    const c = data.country && data.country !== 'Unknown' ? data.country : 'Other';
+    const r = data.region && data.region !== 'Unknown' ? data.region : 'Other';
+    
     countryMap[c] = (countryMap[c] || 0) + 1;
-    if (r !== 'Unknown') regionMap[r] = (regionMap[r] || 0) + 1;
-    if (data.device) (stats.analytics.devices as any)[data.device]++;
+    if (r !== 'Other') regionMap[r] = (regionMap[r] || 0) + 1;
+
+    // Device
+    if (data.device && stats.analytics.devices.hasOwnProperty(data.device)) {
+      (stats.analytics.devices as any)[data.device]++;
+    } else {
+      stats.analytics.devices.desktop++; // Fallback
+    }
+
+    // Peak Hours (WAT - UTC+1)
     if (data.createdAt) {
-      // African Time (WAT - UTC+1)
-      const date = new Date(data.createdAt);
-      const hour = (date.getUTCHours() + 1) % 24;
+      const hour = (new Date(data.createdAt).getUTCHours() + 1) % 24;
       stats.analytics.peakHours[hour]++;
     }
   });
 
+  // Format charts
   stats.analytics.countries = Object.entries(countryMap).map(([name, count]) => ({ name, count })).sort((a: any, b: any) => b.count - a.count).slice(0, 10);
   stats.analytics.regions = Object.entries(regionMap).map(([name, count]) => ({ name, count })).sort((a: any, b: any) => b.count - a.count).slice(0, 10);
 
-  // Group signups by date
+  // Signups Time-series
   signupsSnapshot.docs.forEach(doc => {
     const date = doc.data().createdAt.split('T')[0];
     stats.signups[date] = (stats.signups[date] || 0) + 1;
   });
 
-  // Group revenue by date
+  // Revenue Time-series
   revenueSnapshot.docs.forEach(doc => {
     const date = doc.data().createdAt.split('T')[0];
     stats.revenue[date] = (stats.revenue[date] || 0) + (doc.data().amount || 0);
