@@ -80,9 +80,12 @@ app.use(`${API_VERSION}/testimonials`, testimonialRoutes);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve Admin Dashboard
-app.use('/admin', express.static(path.join(__dirname, 'admin')));
+const adminPath = path.join(__dirname, 'admin');
+const adminFile = path.join(adminPath, 'index.html');
+
+app.use('/admin', express.static(adminPath));
 app.get(['/admin', '/admin/'], (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, 'admin', 'index.html'));
+  res.sendFile(adminFile);
 });
 
 // 404 handler

@@ -694,5 +694,5 @@ export const sendNewsletter = asyncHandler(async (req: Request, res: Response) =
 });
 
 export default {
-  getStats, getUsers, getUserDetails, updateUser, deleteUser, getAuraTrees, getLinks, deleteLink, getPayments, getAnalytics, createLog, getLogs, getSettings, updateSettings, getAdminTestimonials, deleteTestimonial, getSubscribers, deleteSubscriber, sendNewsletter
+  getStats, getAdvancedAnalytics, getUsers, getUserDetails, updateUser, deleteUser, cancelUserSubscription, getAuraTrees, getLinks, deleteLink, getPayments, getAnalytics, createLog, getLogs, getSettings, updateSettings, getAdminTestimonials, deleteTestimonial, getSubscribers, deleteSubscriber, sendNewsletter
 };
