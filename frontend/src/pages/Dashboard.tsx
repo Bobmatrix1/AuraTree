@@ -392,6 +392,11 @@ const Dashboard = () => {
   };
 
   const handleShareClick = () => {
+    if (links.length === 0) {
+      toast.error('Add at least one link before sharing your Aura Tree!');
+      return;
+    }
+
     if (userData?.subscription?.plan === 'free') {
       // Trigger Interstitial for Free users
       // Note: In production, use your actual Zone ID

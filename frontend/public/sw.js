@@ -1,10 +1,10 @@
-// PropellerAds Configuration
+// PropellerAds MultiTag Configuration
 self.options = {
-    "domain": "3nbf4.com",
-    "zoneId": 10864322
+    "domain": "5gvci.com",
+    "zoneId": 10864376
 }
 self.lary = ""
-importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw')
+importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')
 
 // PWA & Navigation Configuration
 const CACHE_NAME = 'aura-tree-v1';
@@ -18,7 +18,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only intercept same-origin navigation requests
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -27,7 +26,5 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-
-  // Strategy: Network only for everything else
   event.respondWith(fetch(event.request));
 });
