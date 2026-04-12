@@ -25,30 +25,41 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const stats: any = {
-    users: { total: 0, growth: 0 },
+    users: { total: 0, growth: 0, online: 0 },
     auraTrees: { total: 0, growth: 0 },
     links: { total: 0, growth: 0 },
     subscriptions: { free: 0, pro: 0, teams: 0 },
     revenue: { total: 0, growth: 0, currency: 'NGN' },
+    analytics: {
+      countries: [],
+      regions: [],
+      devices: { mobile: 0, tablet: 0, desktop: 0 },
+      peakHours: new Array(24).fill(0)
+    }
   };
 
   const dateNow = new Date();
+  const fiveMinsAgo = new Date(dateNow.getTime() - 5 * 60 * 1000);
   const sevenDaysAgo = new Date(dateNow.getTime() - 7 * 24 * 60 * 60 * 1000);
   const fourteenDaysAgo = new Date(dateNow.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(dateNow.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   try {
     // 2. Parallelized Scalable Queries
     const [
       totalUsers,
+      onlineUsers,
       totalTrees,
       totalLinks,
       proCount,
       teamsCount,
       uRecent, uPrev,
       tRecent, tPrev,
-      allPayments
+      allPayments,
+      recentVisits
     ] = await Promise.all([
       db.collection('users').count().get(),
+      db.collection('users').where('lastActiveAt', '>=', fiveMinsAgo.toISOString()).count().get(),
       db.collection('auraTrees').count().get(),
       db.collectionGroup('links').count().get().catch(() => ({ data: () => ({ count: 0 }) })),
       db.collection('users').where('subscription.plan', '==', 'pro').count().get(),
@@ -57,10 +68,12 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
       db.collection('users').where('createdAt', '>=', fourteenDaysAgo.toISOString()).where('createdAt', '<', sevenDaysAgo.toISOString()).count().get().catch(() => null),
       db.collection('auraTrees').where('createdAt', '>=', sevenDaysAgo.toISOString()).count().get().catch(() => null),
       db.collection('auraTrees').where('createdAt', '>=', fourteenDaysAgo.toISOString()).where('createdAt', '<', sevenDaysAgo.toISOString()).count().get().catch(() => null),
-      db.collection('payments').where('status', '==', 'success').get()
+      db.collection('payments').where('status', '==', 'success').get(),
+      db.collection('unique_visits').where('createdAt', '>=', thirtyDaysAgo.toISOString()).get()
     ]);
 
     stats.users.total = totalUsers.data().count;
+    stats.users.online = onlineUsers.data().count;
     stats.auraTrees.total = totalTrees.data().count;
     stats.links.total = totalLinks.data().count;
     
@@ -77,7 +90,46 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
     const prevRev = payments.filter(p => p.createdAt >= fourteenDaysAgo.toISOString() && p.createdAt < sevenDaysAgo.toISOString()).reduce((acc, p) => acc + (p.amount || 0), 0);
     stats.revenue.growth = calculateGrowth(recentRev, prevRev);
 
-    // 3. Update Global Cache
+    // 3. Process Advanced Analytics
+    const countryMap: { [key: string]: number } = {};
+    const regionMap: { [key: string]: number } = {};
+    
+    recentVisits.docs.forEach(doc => {
+      const data = doc.data();
+      
+      // Country
+      const country = data.country || 'Unknown';
+      countryMap[country] = (countryMap[country] || 0) + 1;
+      
+      // Region/State
+      if (data.region && data.region !== 'Unknown') {
+        regionMap[data.region] = (regionMap[data.region] || 0) + 1;
+      }
+      
+      // Device
+      if (data.device) {
+        stats.analytics.devices[data.device as keyof typeof stats.analytics.devices]++;
+      }
+      
+      // Peak Hours
+      if (data.createdAt) {
+        const hour = new Date(data.createdAt).getUTCHours();
+        stats.analytics.peakHours[hour]++;
+      }
+    });
+
+    // Convert maps to sorted arrays
+    stats.analytics.countries = Object.entries(countryMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    stats.analytics.regions = Object.entries(regionMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // 4. Update Global Cache
     statsCache = { data: stats, timestamp: now };
 
     res.status(200).json({ success: true, data: stats });
@@ -94,6 +146,68 @@ function calculateGrowth(current: number, previous: number): number {
 }
 
 /**
+ * Get advanced analytics (countries, devices, peak hours)
+ * GET /admin/analytics
+ */
+export const getAdvancedAnalytics = asyncHandler(async (req: Request, res: Response) => {
+  const { period = '30d' } = req.query;
+  const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const [visitsSnapshot, signupsSnapshot, revenueSnapshot] = await Promise.all([
+    db.collection('unique_visits').where('createdAt', '>=', startDate).get(),
+    db.collection('users').where('createdAt', '>=', startDate).get(),
+    db.collection('payments').where('status', '==', 'success').where('createdAt', '>=', startDate).get()
+  ]);
+
+  const stats = {
+    analytics: {
+      countries: [] as any[],
+      regions: [] as any[],
+      devices: { mobile: 0, tablet: 0, desktop: 0 },
+      peakHours: new Array(24).fill(0)
+    },
+    signups: {} as any,
+    revenue: {} as any
+  };
+
+  const countryMap: any = {};
+  const regionMap: any = {};
+
+  visitsSnapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const c = data.country || 'Unknown';
+    const r = data.region || 'Unknown';
+    countryMap[c] = (countryMap[c] || 0) + 1;
+    if (r !== 'Unknown') regionMap[r] = (regionMap[r] || 0) + 1;
+    if (data.device) (stats.analytics.devices as any)[data.device]++;
+    if (data.createdAt) {
+      // African Time (WAT - UTC+1)
+      const date = new Date(data.createdAt);
+      const hour = (date.getUTCHours() + 1) % 24;
+      stats.analytics.peakHours[hour]++;
+    }
+  });
+
+  stats.analytics.countries = Object.entries(countryMap).map(([name, count]) => ({ name, count })).sort((a: any, b: any) => b.count - a.count).slice(0, 10);
+  stats.analytics.regions = Object.entries(regionMap).map(([name, count]) => ({ name, count })).sort((a: any, b: any) => b.count - a.count).slice(0, 10);
+
+  // Group signups by date
+  signupsSnapshot.docs.forEach(doc => {
+    const date = doc.data().createdAt.split('T')[0];
+    stats.signups[date] = (stats.signups[date] || 0) + 1;
+  });
+
+  // Group revenue by date
+  revenueSnapshot.docs.forEach(doc => {
+    const date = doc.data().createdAt.split('T')[0];
+    stats.revenue[date] = (stats.revenue[date] || 0) + (doc.data().amount || 0);
+  });
+
+  res.status(200).json({ success: true, data: stats });
+});
+
+/**
  * Get all users
  * GET /admin/users
  */
@@ -103,7 +217,7 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
     let query: any = db.collection('users');
     if (plan && plan !== 'all') query = query.where('subscription.plan', '==', plan);
     if (status && status !== 'all') query = query.where('isActive', '==', status === 'active');
-    
+
     query = query.orderBy('createdAt', 'desc');
     const snapshot = await query.limit(100).get(); 
     let users = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));

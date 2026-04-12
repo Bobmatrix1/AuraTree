@@ -10,6 +10,7 @@ import { generateQRCode, getAuraTreeUrl } from '../utils/generateQRCode';
 import { generateSlug, isValidSlug } from '../utils/helpers';
 import { uploadImage } from '../config/cloudinary';
 import { updateAuraScore } from '../utils/auraScore';
+import { getVisitorInfo } from '../utils/analytics';
 
 // Default themes
 const DEFAULT_THEMES = {
@@ -217,10 +218,9 @@ export const getAuraTreeBySlug = asyncHandler(async (req: Request, res: Response
   // Sort in memory by order asc
   links.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
 
-  // 3. Unique Visit Tracking (IP-based)
-  const visitorIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const ipString = Array.isArray(visitorIp) ? visitorIp[0] : (visitorIp || 'unknown');
-  const sanitizedIp = ipString.replace(/[^a-zA-Z0-9]/g, '_');
+  // 3. Unique Visit Tracking (Enhanced)
+  const visitor = getVisitorInfo(req);
+  const sanitizedIp = visitor.ip.replace(/[^a-zA-Z0-9]/g, '_');
   const visitId = `${auraTreeDoc.id}_${sanitizedIp}`;
 
   const visitRef = db.collection('unique_visits').doc(visitId);
@@ -229,10 +229,16 @@ export const getAuraTreeBySlug = asyncHandler(async (req: Request, res: Response
   const updates: any = {};
 
   if (!visitDoc.exists) {
-    // Record the unique visit
+    // Record the unique visit with advanced data
     await visitRef.set({
       auraTreeId: auraTreeDoc.id,
-      ip: ipString,
+      ip: visitor.ip,
+      country: visitor.country,
+      region: visitor.region,
+      city: visitor.city,
+      device: visitor.device,
+      browser: visitor.browser,
+      os: visitor.os,
       createdAt: new Date().toISOString()
     });
 
@@ -251,7 +257,10 @@ export const getAuraTreeBySlug = asyncHandler(async (req: Request, res: Response
     if (!qrVisitDoc.exists) {
       await qrVisitRef.set({
         auraTreeId: auraTreeDoc.id,
-        ip: ipString,
+        ip: visitor.ip,
+        country: visitor.country,
+        region: visitor.region,
+        device: visitor.device,
         createdAt: new Date().toISOString()
       });
       updates.qrScanCount = fieldValue.increment(1);

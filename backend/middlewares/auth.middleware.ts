@@ -80,6 +80,13 @@ export const verifyToken = async (
     req.user = decodedToken;
     req.userId = decodedToken.uid;
 
+    // Heartbeat: Update last active time in background (don't wait for write)
+    const { db } = require('../config/firebase');
+    db.collection('users').doc(decodedToken.uid).update({
+      lastActiveAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }).catch(() => {});
+
     next();
   } catch (error: any) {
     console.error('Token verification error:', error);

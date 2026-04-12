@@ -437,20 +437,60 @@ async function loadDashboardData() {
 }
 
 function updateStatsDisplay(data) {
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  const setGrowth = (id, growth) => { const el = document.getElementById(id); if (!el) return; const isPositive = growth >= 0; el.textContent = `${isPositive ? '+' : ''}${growth}%`; el.className = `stat-change ${isPositive ? 'positive' : 'negative'}`; };
-  setVal('totalUsers', (data.users?.total || 0).toLocaleString());
-  setGrowth('userGrowth', data.users?.growth || 0);
-  setVal('totalAuraTrees', (data.auraTrees?.total || 0).toLocaleString());
-  setGrowth('treeGrowth', data.auraTrees?.growth || 0);
-  setVal('totalLinks', (data.links?.total || 0).toLocaleString());
-  setGrowth('linkGrowth', data.links?.growth || 0);
-  setVal('totalRevenue', '₦' + (data.revenue?.total || 0).toLocaleString());
-  setGrowth('revenueGrowth', data.revenue?.growth || 0);
-  const subStats = document.getElementById('subscriptionStats');
-  if (subStats && data.users?.total > 0) {
-    const total = data.users.total;
-    subStats.innerHTML = `${renderSubStat('Free', data.subscriptions?.free || 0, total, 'var(--aura-text-secondary)')}${renderSubStat('Pro', data.subscriptions?.pro || 0, total, 'var(--aura-violet)')}${renderSubStat('Teams', data.subscriptions?.teams || 0, total, 'var(--aura-cyan)')}`;
+  try {
+    if (!data) {
+      console.error('No data provided to updateStatsDisplay');
+      return;
+    }
+    
+    console.log('Updating stats with:', data);
+    
+    const setVal = (id, val) => { 
+      const el = document.getElementById(id); 
+      if (el) el.textContent = val; 
+      else console.warn(`Element #${id} not found`);
+    };
+    
+    const setGrowth = (id, growth) => { 
+      const el = document.getElementById(id); 
+      if (!el) {
+        console.warn(`Growth element #${id} not found`);
+        return; 
+      }
+      const numGrowth = parseFloat(growth) || 0;
+      const isPositive = numGrowth >= 0; 
+      el.textContent = `${isPositive ? '+' : ''}${numGrowth}%`; 
+      el.className = `stat-change ${isPositive ? 'positive' : 'negative'}`; 
+    };
+
+    // Basic Stats
+    setVal('totalUsers', (data.users?.total || 0).toLocaleString());
+    setVal('onlineUsers', (data.users?.online || 0).toLocaleString());
+    setGrowth('userGrowth', data.users?.growth || 0);
+    
+    setVal('totalAuraTrees', (data.auraTrees?.total || 0).toLocaleString());
+    setGrowth('treeGrowth', data.auraTrees?.growth || 0);
+    
+    setVal('totalLinks', (data.links?.total || 0).toLocaleString());
+    setGrowth('linkGrowth', data.links?.growth || 0);
+    
+    // Revenue Stats
+    const revenueTotal = data.revenue?.total || 0;
+    setVal('totalRevenue', '₦' + revenueTotal.toLocaleString());
+    setGrowth('revenueGrowth', data.revenue?.growth || 0);
+
+    // Subscription Breakdown
+    const subStats = document.getElementById('subscriptionStats');
+    if (subStats && data.users?.total > 0) {
+      const total = data.users.total;
+      subStats.innerHTML = `
+        ${renderSubStat('Free', data.subscriptions?.free || 0, total, 'var(--aura-text-secondary)')}
+        ${renderSubStat('Pro', data.subscriptions?.pro || 0, total, 'var(--aura-violet)')}
+        ${renderSubStat('Teams', data.subscriptions?.teams || 0, total, 'var(--aura-cyan)')}
+      `;
+    }
+  } catch (error) {
+    console.error('Error in updateStatsDisplay:', error);
   }
 }
 
@@ -964,16 +1004,128 @@ document.getElementById('changePlanForm')?.addEventListener('submit', async (e) 
 // --- PAGE: ANALYTICS ---
 let charts = {};
 async function fetchAnalytics() {
-  try { const data = await apiFetch(`/admin/analytics?period=${document.getElementById('analyticsPeriod')?.value || '30d'}`); renderAnalyticsCharts(data); } catch (e) { console.error(e); }
+  try { 
+    const period = document.getElementById('analyticsPeriod')?.value || '30d';
+    const data = await apiFetch(`/admin/analytics?period=${period}`); 
+    renderAnalyticsCharts(data); 
+  } catch (e) { 
+    console.error('Analytics Fetch Error:', e); 
+  }
 }
 
 function renderAnalyticsCharts(data) {
-  const { signups, revenue, distributions } = data; Object.values(charts).forEach(c => c.destroy());
-  const sDates = Object.keys(signups).sort(); const rDates = Object.keys(revenue).sort();
-  charts.signups = new Chart(document.getElementById('signupsChart'), { type: 'line', data: { labels: sDates, datasets: [{ label: 'Signups', data: sDates.map(d => signups[d]), borderColor: '#7B61FF', tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false } });
-  charts.revenue = new Chart(document.getElementById('revenueChart'), { type: 'bar', data: { labels: rDates, datasets: [{ label: 'Revenue', data: rDates.map(d => revenue[d]), backgroundColor: '#2DD4A8' }] }, options: { responsive: true, maintainAspectRatio: false } });
-  charts.plans = new Chart(document.getElementById('plansChart'), { type: 'doughnut', data: { labels: Object.keys(distributions.plans).map(p => p.toUpperCase()), datasets: [{ data: Object.values(distributions.plans), backgroundColor: ['#A7B0D5', '#7B61FF', '#00D9FF'] }] } });
-  charts.platforms = new Chart(document.getElementById('platformsChart'), { type: 'pie', data: { labels: Object.keys(distributions.platforms).map(p => p.toUpperCase()), datasets: [{ data: Object.values(distributions.platforms), backgroundColor: ['#FF61DC', '#7B61FF', '#00D9FF', '#2DD4A8', '#FFD166'] }] } });
+  if (!data) return;
+  const { signups = {}, revenue = {}, analytics = {} } = data;
+  Object.values(charts).forEach(c => c.destroy());
+
+  // 1. Line Charts (Signups & Revenue)
+  const sDates = Object.keys(signups).sort();
+  const rDates = Object.keys(revenue).sort();
+  
+  if (sDates.length > 0) {
+    charts.signups = new Chart(document.getElementById('signupsChart'), {
+      type: 'line',
+      data: {
+        labels: sDates,
+        datasets: [{
+          label: 'New Signups',
+          data: sDates.map(d => signups[d]),
+          borderColor: '#7B61FF',
+          backgroundColor: 'rgba(123, 97, 255, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  if (rDates.length > 0) {
+    charts.revenue = new Chart(document.getElementById('revenueChart'), {
+      type: 'bar',
+      data: {
+        labels: rDates,
+        datasets: [{
+          label: 'Revenue (NGN)',
+          data: rDates.map(d => revenue[d]),
+          backgroundColor: '#2DD4A8'
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+  // 2. Device Distribution (Doughnut)
+  if (analytics && analytics.devices) {
+    const canvas = document.getElementById('devicesChart');
+    if (canvas) {
+      charts.devices = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: ['Mobile', 'Tablet', 'Desktop'],
+          datasets: [{
+            data: [analytics.devices.mobile || 0, analytics.devices.tablet || 0, analytics.devices.desktop || 0],
+            backgroundColor: ['#FF61DC', '#00D9FF', '#7B61FF'],
+            borderWidth: 0
+          }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+  }
+
+  // 3. Peak Usage Hours (Bar)
+  if (analytics && analytics.peakHours) {
+    const canvas = document.getElementById('peakHoursChart');
+    if (canvas) {
+      charts.peakHours = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: Array.from({length: 24}, (_, i) => {
+            const hour = i % 12 || 12;
+            const ampm = i < 12 ? 'AM' : 'PM';
+            return `${hour}${ampm}`;
+          }),
+          datasets: [{
+            label: 'Visits',
+            data: analytics.peakHours,
+            backgroundColor: 'rgba(0, 217, 255, 0.5)',
+            borderColor: '#00D9FF',
+            borderWidth: 1
+          }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+  }
+
+  // 4. Top Countries & Regions Tables
+  const updateTable = (id, list) => {
+    const tbody = document.getElementById(id);
+    if (!tbody) return;
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="2" class="text-center">No data yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(item => `
+      <tr>
+        <td><i class="fas fa-map-pin mr-2 text-aura-violet"></i> ${item.name}</td>
+        <td style="font-weight: 600;">${item.count.toLocaleString()}</td>
+      </tr>
+    `).join('');
+  };
+
+  if (analytics) {
+    updateTable('topCountriesTable', analytics.countries || []);
+    updateTable('topRegionsTable', analytics.regions || []);
+  }
 }
 
 // --- PAGE: LOGS ---

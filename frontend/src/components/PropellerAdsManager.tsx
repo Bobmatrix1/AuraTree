@@ -6,15 +6,15 @@ import { doc, getDoc } from 'firebase/firestore';
 
 const PropellerAdsManager = () => {
   const location = useLocation();
-  const [userPlan, setUserData] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        setUserData(userDoc.data()?.subscription?.plan || 'free');
+        setUserPlan(userDoc.data()?.subscription?.plan || 'free');
       } else {
-        setUserData('free'); // Treat logged out users as free for landing page
+        setUserPlan('free');
       }
     });
     return () => unsubscribe();
@@ -23,52 +23,87 @@ const PropellerAdsManager = () => {
   useEffect(() => {
     // 1. COMPLETELY Disable for Paid Users
     if (userPlan && userPlan !== 'free') {
-      const existingScript = document.querySelector('script[data-zone="228814"]');
-      if (existingScript) existingScript.remove();
+      removeAdScript();
       return;
     }
 
-    // 2. Disable ONLY for critical non-dashboard pages like Checkout or Admin
+    // 2. Disable for critical non-dashboard pages
     const criticalPages = ['/checkout', '/admin'];
-    const isCriticalPage = criticalPages.some(page => location.pathname.startsWith(page));
-
-    if (isCriticalPage) {
-      const existingScript = document.querySelector('script[data-zone="228814"]');
-      if (existingScript) existingScript.remove();
+    if (criticalPages.some(page => location.pathname.startsWith(page))) {
+      removeAdScript();
       return;
     }
 
-    // 3. Strict 3-Minute Throttling Logic
+    // 3. Strict Throttling Logic
     const LAST_AD_KEY = 'last_ad_timestamp';
+    const CLICK_COUNT_KEY = 'ad_click_session_count';
     const THROTTLE_MS = 3 * 60 * 1000; // 3 minutes
-    const lastAdTime = localStorage.getItem(LAST_AD_KEY);
-    const now = Date.now();
+    const MAX_CLICKS = 3;
 
-    // If we are within the 3-minute window of the LAST time we allowed the script to load
-    if (lastAdTime && now - parseInt(lastAdTime) < THROTTLE_MS) {
-      console.log('Ads suppressed: cooldown active');
-      // Ensure any existing script is removed to be absolutely sure
-      const existingScript = document.querySelector('script[data-zone="228814"]');
-      if (existingScript) existingScript.remove();
-      return;
+    const checkCooldown = () => {
+      const lastAdTime = localStorage.getItem(LAST_AD_KEY);
+      const now = Date.now();
+      if (lastAdTime && now - parseInt(lastAdTime) < THROTTLE_MS) {
+        removeAdScript();
+        return true;
+      }
+      return false;
+    };
+
+    const handleInteraction = () => {
+      if (checkCooldown()) return;
+
+      let clicks = parseInt(localStorage.getItem(CLICK_COUNT_KEY) || '0');
+      clicks++;
+      
+      if (clicks >= MAX_CLICKS) {
+        // Limit reached: Start 3-minute lockdown
+        localStorage.setItem(LAST_AD_KEY, Date.now().toString());
+        localStorage.setItem(CLICK_COUNT_KEY, '0');
+        removeAdScript();
+        console.log('Ad limit (3) reached. Lockdown for 3 minutes.');
+      } else {
+        localStorage.setItem(CLICK_COUNT_KEY, clicks.toString());
+      }
+    };
+
+    function loadAdScript() {
+      if (checkCooldown()) return;
+      if (document.querySelector('script[data-zone="228814"]')) return;
+      
+      const script = document.createElement('script');
+      script.src = "https://quge5.com/88/tag.min.js";
+      script.dataset.zone = "228814";
+      script.async = true;
+      script.dataset.cfasync = "false";
+      document.head.appendChild(script);
     }
 
-    // 4. Load the script only if cooldown has passed
-    const script = document.createElement('script');
-    script.src = "https://quge5.com/88/tag.min.js";
-    script.dataset.zone = "228814";
-    script.async = true;
-    script.dataset.cfasync = "false";
+    function removeAdScript() {
+      // Physically remove script tag
+      const script = document.querySelector('script[data-zone="228814"]');
+      if (script) script.remove();
+      
+      // Clean up all possible Propeller objects and dynamic tags
+      const propellerGlobals = ['propeller', 'prophsh', 'pps', 'pp_ms'];
+      propellerGlobals.forEach(key => {
+        if ((window as any)[key]) delete (window as any)[key];
+      });
+      
+      // Remove any dynamic scripts Propeller might have added
+      document.querySelectorAll('script[src*="quge5.com"], script[src*="5gvci.com"]').forEach(s => s.remove());
+    }
+
+    // Initial check and load
+    loadAdScript();
     
-    // Update the timestamp immediately so no other component/page loads it for 3 mins
-    localStorage.setItem(LAST_AD_KEY, Date.now().toString());
-    
-    document.head.appendChild(script);
+    // Use mousedown/touchstart for faster detection than 'click'
+    window.addEventListener('mousedown', handleInteraction);
+    window.addEventListener('touchstart', handleInteraction);
 
     return () => {
-      // We do NOT remove the script on cleanup here because Propeller 
-      // often needs the script to stay to handle the "OnClick" events.
-      // The useEffect dependency [location.pathname] will handle the re-check.
+      window.removeEventListener('mousedown', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
     };
   }, [location.pathname, userPlan]);
 

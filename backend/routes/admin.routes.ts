@@ -15,7 +15,7 @@ import {
   getLinks,
   deleteLink,
   getPayments,
-  getAnalytics,
+  getAdvancedAnalytics,
   createLog,
   getLogs,
   getSettings,
@@ -62,7 +62,7 @@ import {
 
 // Dashboard
 router.get('/stats', getStats);
-router.get('/analytics', getAnalytics);
+router.get('/analytics', getAdvancedAnalytics);
 
 // Affiliates
 router.get('/affiliates', getAllAffiliates);
