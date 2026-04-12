@@ -38,6 +38,10 @@ const FAQ = () => {
       question: 'Can I customize my profile link?',
       answer: 'Yes! On the Pro plan, you can choose a custom name with our official prefix (e.g., aura.tree/yourbrand). The Teams plan takes it a step further by allowing you to remove the "aura-" prefix entirely, giving you a fully branded, white-labeled link for your profile.',
     },
+    {
+      question: 'Are there any ads on the platform?',
+      answer: 'Aura Tree is supported by minimal ads for users on the Free plan. To enjoy a 100% ad-free experience for both your public profile and your management dashboard, simply upgrade to any of our paid plans (Pro or Teams).',
+    },
   ];
 
   useEffect(() => {

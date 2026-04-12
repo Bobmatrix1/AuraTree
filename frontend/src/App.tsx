@@ -34,6 +34,7 @@ import Footer from './sections/Footer';
 // Components
 import Starfield from './components/Starfield';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import PropellerAdsManager from './components/PropellerAdsManager';
 import DemoModal from './components/DemoModal';
 import AuthModal from './components/AuthModal';
 import ComparePlansModal from './components/ComparePlansModal';
@@ -299,6 +300,7 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
+        <PropellerAdsManager />
         <PWAInstallPrompt />
         <Routes>
           <Route path="/" element={<LandingPage user={user} onCompareClick={() => setShowCompare(true)} onContactClick={() => setIsContactOpen(true)} />} />

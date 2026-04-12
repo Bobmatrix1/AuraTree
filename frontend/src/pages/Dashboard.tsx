@@ -398,21 +398,23 @@ const Dashboard = () => {
     }
 
     if (userData?.subscription?.plan === 'free') {
-      // Trigger Interstitial for Free users
-      // Note: In production, use your actual Zone ID
-      const interstitialZoneId = 'your_interstitial_zone_id'; 
+      // Compulsory Ad for Free users
+      // This opens the ad in a new tab and continues to the modal
+      const adUrl = "https://quge5.com/88/tag.min.js?zone=228814"; // Using your MultiTag zone as a base
       
-      toast.info('Generating your link... please wait a moment.', {
+      toast.info('Opening secure link... please wait.', {
         duration: 3000,
       });
 
-      // Optional: Trigger the actual Propeller interstitial script logic here
-      // For now, we simulate the "watch" delay
+      // Open ad in new window/tab
+      window.open(adUrl, '_blank');
+
+      // Small delay to ensure they see the "process" before the share modal appears
       setTimeout(() => {
         setShowShareModal(true);
-      }, 2000);
+      }, 1500);
     } else {
-      // Paid users get instant access
+      // Paid users get instant access with NO ads
       setShowShareModal(true);
     }
   };
@@ -1255,7 +1257,7 @@ const Dashboard = () => {
                       <LucideSparkles className="w-5 h-5 text-aura-pink animate-pulse" /> Elevate your Aura
                     </h2>
                     <p className="text-aura-text-secondary text-sm max-w-xl">
-                      {isFree ? 'Unlock premium glassmorphic themes, full branding control, and real-time analytics by upgrading to Pro.' : 'Remove the "aura-" prefix entirely and get fully branded links with the Teams plan.'}
+                      {isFree ? 'Unlock premium glassmorphic themes, full branding control, and a 100% ad-free experience by upgrading to Pro.' : 'Remove the "aura-" prefix entirely and enjoy an ad-free workspace with the Teams plan.'}
                     </p>
                   </div>
                   <button onClick={() => { window.location.href = '/#pricing'; }} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">

@@ -155,6 +155,12 @@ const AffiliateSection = ({ userData, auraTreeId }: { userData: any, auraTreeId?
     }
 
     setIsRegistering(true);
+
+    // Trigger Ad for Free users
+    if (userData?.subscription?.plan === 'free' || !userData?.subscription) {
+      window.open("https://quge5.com/88/tag.min.js?zone=228814", "_blank");
+    }
+
     try {
       const token = await auth.currentUser?.getIdToken();
       const response = await fetch(`${API_V1_URL}/affiliates/register`, {
