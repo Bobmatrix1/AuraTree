@@ -398,16 +398,16 @@ const Dashboard = () => {
     }
 
     if (userData?.subscription?.plan === 'free') {
-      // Compulsory Ad for Free users
-      // This opens the ad in a new tab and continues to the modal
-      const adUrl = "https://quge5.com/88/tag.min.js?zone=228814"; // Using your MultiTag zone as a base
+      // COMPULSORY AD: This bypasses the 3-minute manager cooldown 
+      // by using a direct window.open call.
+      const directAdUrl = "https://quge5.com/direct/228814"; // Using a direct link format
       
       toast.info('Opening secure link... please wait.', {
         duration: 3000,
       });
 
       // Open ad in new window/tab
-      window.open(adUrl, '_blank');
+      window.open(directAdUrl, '_blank');
 
       // Small delay to ensure they see the "process" before the share modal appears
       setTimeout(() => {

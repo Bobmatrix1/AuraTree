@@ -38,33 +38,37 @@ const PropellerAdsManager = () => {
       return;
     }
 
-    // 3. 3-Minute Throttling Logic
+    // 3. Strict 3-Minute Throttling Logic
     const LAST_AD_KEY = 'last_ad_timestamp';
     const THROTTLE_MS = 3 * 60 * 1000; // 3 minutes
     const lastAdTime = localStorage.getItem(LAST_AD_KEY);
     const now = Date.now();
 
+    // If we are within the 3-minute window of the LAST time we allowed the script to load
     if (lastAdTime && now - parseInt(lastAdTime) < THROTTLE_MS) {
-      console.log('Ad suppressed: 3-minute cooldown active');
+      console.log('Ads suppressed: cooldown active');
+      // Ensure any existing script is removed to be absolutely sure
+      const existingScript = document.querySelector('script[data-zone="228814"]');
+      if (existingScript) existingScript.remove();
       return;
     }
 
-    // 4. Load the script
+    // 4. Load the script only if cooldown has passed
     const script = document.createElement('script');
     script.src = "https://quge5.com/88/tag.min.js";
     script.dataset.zone = "228814";
     script.async = true;
     script.dataset.cfasync = "false";
     
-    // Record that we loaded an ad set
-    localStorage.setItem(LAST_AD_KEY, now.toString());
+    // Update the timestamp immediately so no other component/page loads it for 3 mins
+    localStorage.setItem(LAST_AD_KEY, Date.now().toString());
     
     document.head.appendChild(script);
 
     return () => {
-      if (script.parentNode) {
-        script.remove();
-      }
+      // We do NOT remove the script on cleanup here because Propeller 
+      // often needs the script to stay to handle the "OnClick" events.
+      // The useEffect dependency [location.pathname] will handle the re-check.
     };
   }, [location.pathname, userPlan]);
 
