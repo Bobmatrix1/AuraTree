@@ -7,68 +7,72 @@ import { doc, getDoc } from 'firebase/firestore';
 const PropellerAdsManager = () => {
   const location = useLocation();
   const [userPlan, setUserPlan] = useState<string | null>(null);
+  const [isPlanLoaded, setIsPlanLoaded] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        setUserPlan(userDoc.data()?.subscription?.plan || 'free');
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const plan = userDoc.data()?.subscription?.plan || 'free';
+          setUserPlan(plan);
+        } catch (e) {
+          setUserPlan('free');
+        }
       } else {
         setUserPlan('free');
       }
+      setIsPlanLoaded(true);
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    // 1. COMPLETELY Disable for Paid Users
+    // LAYER 1: Absolute block until plan is verified
+    if (!isPlanLoaded) return;
+
+    // LAYER 2: Absolute block for Paid Users
     if (userPlan && userPlan !== 'free') {
-      removeAdScript();
+      console.log('Premium user detected: Ads blocked permanently.');
+      nuclearRemoveAds();
       return;
     }
 
-    // 2. Disable for critical non-dashboard pages
+    // LAYER 3: Block for critical pages
     const criticalPages = ['/checkout', '/admin'];
     if (criticalPages.some(page => location.pathname.startsWith(page))) {
-      removeAdScript();
+      nuclearRemoveAds();
       return;
     }
 
-    // 3. Strict Throttling Logic
-    const LAST_AD_KEY = 'last_ad_timestamp';
-    const CLICK_COUNT_KEY = 'ad_click_session_count';
-    const THROTTLE_MS = 3 * 60 * 1000; // 3 minutes
-    const MAX_CLICKS = 3;
+    const LAST_AD_KEY = 'strict_ad_lockdown_ts';
+    const THROTTLE_MS = 3 * 60 * 1000; // 3 Minutes
 
-    const checkCooldown = () => {
-      const lastAdTime = localStorage.getItem(LAST_AD_KEY);
+    const checkLockdown = () => {
+      const lastAd = localStorage.getItem(LAST_AD_KEY);
       const now = Date.now();
-      if (lastAdTime && now - parseInt(lastAdTime) < THROTTLE_MS) {
-        removeAdScript();
+      if (lastAd && (now - parseInt(lastAd)) < THROTTLE_MS) {
+        nuclearRemoveAds();
         return true;
       }
       return false;
     };
 
     const handleInteraction = () => {
-      if (checkCooldown()) return;
+      if (checkLockdown()) return;
 
-      let clicks = parseInt(localStorage.getItem(CLICK_COUNT_KEY) || '0');
-      clicks++;
+      // START LOCKDOWN: Mark current time as "Ad Fired"
+      localStorage.setItem(LAST_AD_KEY, Date.now().toString());
+      console.log('Ad triggered. Entering 3-minute silence mode.');
       
-      if (clicks >= MAX_CLICKS) {
-        // Limit reached: Start 3-minute lockdown
-        localStorage.setItem(LAST_AD_KEY, Date.now().toString());
-        localStorage.setItem(CLICK_COUNT_KEY, '0');
-        removeAdScript();
-        console.log('Ad limit (3) reached. Lockdown for 3 minutes.');
-      } else {
-        localStorage.setItem(CLICK_COUNT_KEY, clicks.toString());
-      }
+      // Give the ad 1 second to actually trigger its pop-under, then kill everything
+      setTimeout(() => {
+        nuclearRemoveAds();
+      }, 1000);
     };
 
     function loadAdScript() {
-      if (checkCooldown()) return;
+      if (checkLockdown()) return;
       if (document.querySelector('script[data-zone="228814"]')) return;
       
       const script = document.createElement('script');
@@ -79,33 +83,35 @@ const PropellerAdsManager = () => {
       document.head.appendChild(script);
     }
 
-    function removeAdScript() {
-      // Physically remove script tag
-      const script = document.querySelector('script[data-zone="228814"]');
-      if (script) script.remove();
+    function nuclearRemoveAds() {
+      // 1. Remove the main script
+      document.querySelectorAll('script[data-zone="228814"]').forEach(s => s.remove());
       
-      // Clean up all possible Propeller objects and dynamic tags
-      const propellerGlobals = ['propeller', 'prophsh', 'pps', 'pp_ms'];
-      propellerGlobals.forEach(key => {
-        if ((window as any)[key]) delete (window as any)[key];
+      // 2. Clear all global Propeller objects to prevent background triggers
+      const pKeys = ['propeller', 'prophsh', 'pps', 'pp_ms', 'pp_s', 'pp_ns'];
+      pKeys.forEach(key => {
+        try {
+          (window as any)[key] = undefined;
+          delete (window as any)[key];
+        } catch (e) {}
       });
-      
-      // Remove any dynamic scripts Propeller might have added
+
+      // 3. Remove any injected scripts from their CDN
       document.querySelectorAll('script[src*="quge5.com"], script[src*="5gvci.com"]').forEach(s => s.remove());
+      
+      // 4. Force clear any existing click listeners by Propeller if possible
+      // (This is a fallback as we can't easily list all listeners)
     }
 
-    // Initial check and load
     loadAdScript();
-    
-    // Use mousedown/touchstart for faster detection than 'click'
-    window.addEventListener('mousedown', handleInteraction);
-    window.addEventListener('touchstart', handleInteraction);
+    window.addEventListener('mousedown', handleInteraction, { once: true });
+    window.addEventListener('touchstart', handleInteraction, { once: true });
 
     return () => {
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('touchstart', handleInteraction);
     };
-  }, [location.pathname, userPlan]);
+  }, [location.pathname, userPlan, isPlanLoaded]);
 
   return null;
 };
