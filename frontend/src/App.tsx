@@ -73,19 +73,25 @@ const LandingPage = ({
   onDemoClick: () => void
 }) => (
   <main className="relative z-10 overflow-x-hidden">
-    <HeroSection user={user} onAuthClick={onAuthClick} onDemoClick={onDemoClick} />
-    <SocialProof />
-    <FeaturesOrbit />
-    <FeatureThemes />
-    <EditorPreview onAuthClick={onAuthClick} />
-    <FeatureAnalytics />
-    <FeatureQR user={user} />
-    <Pricing user={user} onPlanClick={onAuthClick} />
-    <FAQ />
-    <FinalCTA user={user} onAuthClick={onAuthClick} onCompareClick={onCompareClick} />
-    <Footer onContactOpenChange={onContactClick} />
-  </main>
-);
+  <Navigation 
+    user={user} 
+    onAuthClick={onAuthClick} 
+    onDemoClick={onDemoClick} 
+    onLoginClick={onAuthClick}
+    onContactClick={onContactClick}
+  />
+  <HeroSection user={user} onAuthClick={onAuthClick} onDemoClick={onDemoClick} />
+  <FeaturesOrbit />
+  <FeatureThemes />
+  <EditorPreview onAuthClick={onAuthClick} />
+  <FeatureAnalytics />
+  <FeatureQR user={user} />
+  <Pricing user={user} onPlanClick={onAuthClick} />
+  <SocialProof />
+  <FAQ />
+  <FinalCTA user={user} onAuthClick={onAuthClick} onCompareClick={onCompareClick} />
+  <Footer onContactOpenChange={onContactClick} />
+  </main>);
 
 function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -104,13 +110,13 @@ function App() {
 
     // Smooth Scroll Initialization
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.0, // Slightly faster for responsiveness
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
+      wheelMultiplier: 1.1, // Better feel
+      touchMultiplier: 1.5,
       infinite: false,
     });
 

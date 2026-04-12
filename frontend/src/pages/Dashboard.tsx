@@ -1077,7 +1077,7 @@ const Dashboard = () => {
   const isOwner = auraTree?.role === 'owner';
 
   return (
-    <div className="min-h-screen bg-aura-navy flex">
+    <div className="h-screen bg-aura-navy flex overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 border-r border-aura-glass-border hidden lg:flex flex-col bg-white/[0.02] backdrop-blur-xl">
         <div className="p-6 flex items-center gap-2">
@@ -1141,8 +1141,8 @@ const Dashboard = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 min-h-screen pb-16 lg:pb-0">
-        <header className="h-16 border-b border-aura-glass-border flex items-center justify-between px-4 lg:px-8 bg-white/[0.01] backdrop-blur-md sticky top-0 z-20">
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto scroll-smooth pb-20 lg:pb-0" data-lenis-prevent>
+        <header className="h-16 border-b border-aura-glass-border flex items-center justify-between px-4 lg:px-8 bg-white/[0.01] backdrop-blur-md sticky top-0 z-20 shrink-0">
           <div className="flex items-center gap-4">
             <button onClick={() => { window.location.href = '/'; }} className="p-2 -ml-2 rounded-lg hover:bg-white/5 text-aura-text-secondary hover:text-aura-text transition-colors flex items-center gap-2 text-sm font-medium">
               <LucideArrowLeft className="w-4 h-4" />
