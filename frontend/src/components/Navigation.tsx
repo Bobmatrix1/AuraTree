@@ -98,11 +98,10 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactCli
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          isScrolled
-            ? 'bg-aura-navy/90 backdrop-blur-xl border-b border-white/5'
-            : 'bg-transparent'
-        }`}
+        className={`site-navigation transition-all duration-500`}
+        style={{ 
+          backgroundColor: isScrolled ? 'rgba(2, 6, 23, 0.95)' : 'transparent',
+        }}
       >
         <div className="w-full px-4 sm:px-6 lg:px-12">
           <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20">
@@ -216,9 +215,10 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactCli
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-[60] lg:hidden ${
+        className={`fixed inset-0 z-[999999999] lg:hidden ${
           isMobileMenuOpen ? 'visible' : 'invisible pointer-events-none'
         }`}
+        style={{ transform: 'translateZ(99999px)' }}
       >
         <div 
           className={`absolute inset-0 bg-aura-navy/40 backdrop-blur-[40px] transition-opacity duration-200 ${

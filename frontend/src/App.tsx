@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -17,8 +17,21 @@ import {
 } from '@/components/ui/sheet';
 import { Mail, Phone, MessageSquare, ExternalLink, Sparkles } from 'lucide-react';
 
-// Regular imports for components used in the initial render or that have complex props
+// Sections
 import Navigation from './components/Navigation';
+import HeroSection from './sections/HeroSection';
+import SocialProof from './sections/SocialProof';
+import FeaturesOrbit from './sections/FeaturesOrbit';
+import FeatureThemes from './sections/FeatureThemes';
+import FeatureAnalytics from './sections/FeatureAnalytics';
+import EditorPreview from './sections/EditorPreview';
+import FeatureQR from './sections/FeatureQR';
+import Pricing from './sections/Pricing';
+import FAQ from './sections/FAQ';
+import FinalCTA from './sections/FinalCTA';
+import Footer from './sections/Footer';
+
+// Components
 import Starfield from './components/Starfield';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PropellerAdsManager from './components/PropellerAdsManager';
@@ -38,61 +51,6 @@ import CareersPage from './pages/CareersPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 
-// Sections
-import HeroSection from './sections/HeroSection';
-import SocialProof from './sections/SocialProof';
-import FeaturesOrbit from './sections/FeaturesOrbit';
-import FeatureThemes from './sections/FeatureThemes';
-import EditorPreview from './sections/EditorPreview';
-import FeatureAnalytics from './sections/FeatureAnalytics';
-import FeatureQR from './sections/FeatureQR';
-import Pricing from './sections/Pricing';
-import FAQ from './sections/FAQ';
-import FinalCTA from './sections/FinalCTA';
-import Footer from './sections/Footer';
-
-// Performance Optimization: Simple Loader for Suspense
-const PageLoader = () => (
-  <div className="min-h-screen bg-aura-navy flex items-center justify-center">
-    <div className="w-12 h-12 border-4 border-aura-violet/20 border-t-aura-violet rounded-full animate-spin" />
-  </div>
-);
-
-// Landing Page Component
-const LandingPage = ({ 
-  user, 
-  onCompareClick, 
-  onContactClick,
-  onAuthClick,
-  onDemoClick
-}: { 
-  user: FirebaseUser | null, 
-  onCompareClick: () => void,
-  onContactClick: () => void,
-  onAuthClick: () => void,
-  onDemoClick: () => void
-}) => (
-  <main className="relative z-10 overflow-x-hidden">
-  <Navigation 
-    user={user} 
-    onAuthClick={onAuthClick} 
-    onDemoClick={onDemoClick} 
-    onLoginClick={onAuthClick}
-    onContactClick={onContactClick}
-  />
-  <HeroSection user={user} onAuthClick={onAuthClick} onDemoClick={onDemoClick} />
-  <FeaturesOrbit />
-  <FeatureThemes />
-  <EditorPreview onAuthClick={onAuthClick} />
-  <FeatureAnalytics />
-  <FeatureQR user={user} />
-  <Pricing user={user} onPlanClick={onAuthClick} />
-  <SocialProof />
-  <FAQ />
-  <FinalCTA user={user} onAuthClick={onAuthClick} onCompareClick={onCompareClick} />
-  <Footer onContactOpenChange={onContactClick} />
-  </main>);
-
 function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,16 +67,7 @@ function App() {
     });
 
     // Smooth Scroll Initialization
-    const lenis = new Lenis({
-      duration: 1.0, // Slightly faster for responsiveness
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1.1, // Better feel
-      touchMultiplier: 1.5,
-      infinite: false,
-    });
+    const lenis = new Lenis();
 
     function raf(time: number) {
       lenis.raf(time);
@@ -133,22 +82,36 @@ function App() {
     };
   }, []);
 
-  if (loading) return <PageLoader />;
+  if (loading) return null;
 
   return (
     <HelmetProvider>
       <Router>
+        <Starfield />
         <PropellerAdsManager />
         <PWAInstallPrompt />
         <Routes>
           <Route path="/" element={
-            <LandingPage 
-              user={user} 
-              onCompareClick={() => setShowCompare(true)} 
-              onContactClick={() => setIsContactOpen(true)}
-              onAuthClick={() => setIsAuthOpen(true)}
-              onDemoClick={() => setIsDemoOpen(true)}
-            />
+            <main className="relative z-10 overflow-x-hidden">
+              <Navigation 
+                user={user} 
+                onAuthClick={() => setIsAuthOpen(true)} 
+                onDemoClick={() => setIsDemoOpen(true)} 
+                onLoginClick={() => setIsAuthOpen(true)}
+                onContactClick={() => setIsContactOpen(true)}
+              />
+              <HeroSection user={user} onAuthClick={() => setIsAuthOpen(true)} onDemoClick={() => setIsDemoOpen(true)} />
+              <FeaturesOrbit />
+              <FeatureThemes />
+              <EditorPreview onAuthClick={() => setIsAuthOpen(true)} />
+              <FeatureAnalytics />
+              <FeatureQR user={user} />
+              <Pricing user={user} onPlanClick={() => setIsAuthOpen(true)} />
+              <SocialProof />
+              <FAQ />
+              <FinalCTA user={user} onAuthClick={() => setIsAuthOpen(true)} onCompareClick={() => setShowCompare(true)} />
+              <Footer onContactOpenChange={() => setIsContactOpen(true)} />
+            </main>
           } />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/signup" element={<AuthPage />} />

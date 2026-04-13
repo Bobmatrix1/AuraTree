@@ -1077,46 +1077,679 @@ const Dashboard = () => {
   const isOwner = auraTree?.role === 'owner';
 
   return (
-    <div className="h-screen bg-aura-navy flex overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-aura-glass-border hidden lg:flex flex-col bg-white/[0.02] backdrop-blur-xl">
-        <div className="p-6 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-aura-violet to-aura-cyan flex items-center justify-center">
-            <LucideSparkles className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-aura-navy flex flex-col">
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-64 border-r border-aura-glass-border hidden lg:flex flex-col bg-white/[0.02] backdrop-blur-xl shrink-0">
+          <div className="p-6 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-aura-violet to-aura-cyan flex items-center justify-center">
+              <LucideSparkles className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-display font-bold text-xl text-aura-text">Aura Tree</span>
           </div>
-          <span className="font-display font-bold text-xl text-aura-text">Aura Tree</span>
-        </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                activeTab === item.id 
-                  ? 'bg-aura-violet text-white shadow-lg shadow-aura-violet/20' 
-                  : 'text-aura-text-secondary hover:bg-white/5 hover:text-aura-text'
-              }`}
+          <nav className="flex-1 px-4 py-4 space-y-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  activeTab === item.id 
+                    ? 'bg-aura-violet text-white shadow-lg shadow-aura-violet/20' 
+                    : 'text-aura-text-secondary hover:bg-white/5 hover:text-aura-text'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="p-4 border-t border-aura-glass-border">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-aura-text-secondary hover:bg-red-500/10 hover:text-red-500 transition-all"
             >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <LucideLogOut className="w-5 h-5" />
+              <span className="font-medium">Logout</span>
             </button>
-          ))}
-        </nav>
+          </div>
+        </aside>
 
-        <div className="p-4 border-t border-aura-glass-border">
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-aura-text-secondary hover:bg-red-500/10 hover:text-red-500 transition-all"
-          >
-            <LucideLogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
-          </button>
-        </div>
-      </aside>
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto scroll-smooth pb-20 lg:pb-0" data-lenis-prevent>
+          <header className="h-16 border-b border-aura-glass-border flex items-center justify-between px-4 lg:px-8 bg-white/[0.01] backdrop-blur-md sticky top-0 z-20 shrink-0">
+            <div className="flex items-center gap-4">
+              <button onClick={() => { window.location.href = '/'; }} className="p-2 -ml-2 rounded-lg hover:bg-white/5 text-aura-text-secondary hover:text-aura-text transition-colors flex items-center gap-2 text-sm font-medium">
+                <LucideArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back to Site</span>
+              </button>
+              
+              <div className="h-8 w-px bg-white/10 hidden sm:block" />
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-aura-navy/80 backdrop-blur-xl border-t border-aura-glass-border flex items-center overflow-x-auto no-scrollbar px-1 z-50">
+              {/* Page Switcher */}
+              <div className="relative" ref={switcherRef}>
+                <button 
+                  onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all text-aura-text group text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-aura-violet/20 flex items-center justify-center text-aura-violet font-bold text-xs uppercase">
+                    {auraTree?.displayName?.charAt(0) || 'A'}
+                  </div>
+                  <div className="hidden sm:block">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold leading-none">{auraTree?.displayName}</p>
+                      {auraTree?.role === 'member' && <span className="text-[8px] bg-aura-violet/20 text-aura-violet px-1.5 py-0.5 rounded-full uppercase font-bold">Team Member</span>}
+                    </div>
+                    <p className="text-[10px] text-aura-text-secondary mt-1">/{auraTree?.slug}</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-aura-text-secondary transition-transform duration-300 ${isSwitcherOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isSwitcherOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-aura-navy border border-aura-glass-border rounded-2xl shadow-2xl backdrop-blur-xl z-[100] p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest px-3 py-2">My Aura Pages</p>
+                    <div className="space-y-1 max-h-60 overflow-y-auto no-scrollbar">
+                      {allAuraTrees.map((tree) => (
+                        <div
+                          key={tree.id}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                            auraTree?.id === tree.id 
+                              ? 'bg-aura-violet/10 text-aura-violet' 
+                              : 'text-aura-text-secondary hover:bg-white/5 hover:text-aura-text'
+                          }`}
+                          onClick={() => handlePageSwitch(tree.id)}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${auraTree?.id === tree.id ? 'bg-aura-violet text-white' : 'bg-white/5'}`}>
+                            {tree.displayName?.charAt(0)}
+                          </div>
+                          <div className="text-left flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate">{tree.displayName}</p>
+                            <div className="flex items-center gap-1">
+                              <p className="text-[9px] opacity-60 truncate">/{tree.slug}</p>
+                              {tree.role === 'member' && <span className="text-[7px] text-aura-violet font-bold uppercase">Team</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {auraTree?.id === tree.id && <LucideCheck className="w-3 h-3 text-aura-violet" />}
+                            {tree.role === 'owner' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingPage(tree);
+                                  setShowDeletePageModal(true);
+                                  setIsSwitcherOpen(false);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-aura-text-secondary hover:text-red-500 transition-colors"
+                                title="Delete Page"
+                              >
+                                <LucideTrash className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="h-px bg-white/5 my-2" />
+                    
+                    <button 
+                      onClick={() => { setShowCreatePageModal(true); setIsSwitcherOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-aura-mint hover:bg-aura-mint/5 transition-all font-bold text-xs"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-aura-mint/10 flex items-center justify-center">
+                        <LucidePlus className="w-4 h-4" />
+                      </div>
+                      Create New Page
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              {!userData?.isAffiliate && (
+                <button onClick={() => setActiveTab('affiliate')} className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-aura-violet/10 border border-aura-violet/20 text-aura-violet text-sm font-bold hover:bg-aura-violet/20 transition-all">
+                  <LucideHandshake className="w-4 h-4" /> Become an Affiliate
+                </button>
+              )}
+              <button onClick={handleShareClick} className="hidden sm:flex btn-primary py-2 px-6 text-sm font-bold shadow-lg shadow-aura-violet/20">
+                Share Profile
+              </button>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-aura-violet to-aura-cyan p-0.5 overflow-hidden">
+                <div className="w-full h-full rounded-full bg-aura-navy flex items-center justify-center font-bold text-aura-text overflow-hidden">
+                  {auraTree?.avatarUrl ? <img src={auraTree.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : (auraTree?.displayName || userData?.displayName || 'U').charAt(0).toUpperCase()}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div className="flex-1 p-4 lg:p-8">
+            <div className="max-w-6xl mx-auto space-y-8">
+              {userData?.subscription?.plan !== 'teams' && isOwner && (
+                <div className="glass-card p-6 border-aura-violet/30 bg-gradient-to-r from-aura-violet/10 to-transparent relative overflow-hidden group">
+                  <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="space-y-2 text-center md:text-left">
+                      <h2 className="font-display font-bold text-xl text-aura-text flex items-center gap-2 justify-center md:justify-start">
+                        <LucideSparkles className="w-5 h-5 text-aura-pink animate-pulse" /> Elevate your Aura
+                      </h2>
+                      <p className="text-aura-text-secondary text-sm max-w-xl">
+                        {isFree ? 'Unlock premium glassmorphic themes, full branding control, and a 100% ad-free experience by upgrading to Pro.' : 'Remove the "aura-" prefix entirely and enjoy an ad-free workspace with the Teams plan.'}
+                      </p>
+                    </div>
+                    <button onClick={() => { window.location.href = '/#pricing'; }} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
+                      Upgrade Now
+                    </button>
+                  </div>
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-aura-violet/10 blur-[100px] -mr-32 -mt-32 rounded-full" />
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                {[
+                  { label: 'Total Visits', value: isFree ? 'Unlock' : (auraTree?.viewCount || '0'), icon: LucideBarChart3, color: 'text-aura-violet', locked: isFree },
+                  { label: 'Link Clicks', value: isFree ? 'Unlock' : (links.reduce((acc, curr) => acc + (curr.clickCount || 0), 0)), icon: LucideLink2, color: 'text-aura-cyan', locked: isFree },
+                  { label: 'QR Scans', value: isFree ? 'Unlock' : (auraTree?.qrScanCount || '0'), icon: LucideQrCode, color: 'text-aura-mint', locked: isFree },
+                  { label: 'Aura Score', value: auraTree?.auraScore || '0', icon: LucideSparkles, color: 'text-aura-pink', glow: (auraTree?.auraScore || 0) >= 80 },
+                ].map((stat, i) => (
+                  <div key={i} className={`glass-card p-6 flex items-center justify-between transition-all duration-500 ${stat.glow ? 'shadow-[0_0_30px_rgba(123,97,255,0.3)] border-aura-violet/30 animate-pulse-glow' : ''} ${stat.locked ? 'cursor-pointer group hover:border-aura-violet/30' : ''}`}>
+                    <div>
+                      <p className="text-xs text-aura-text-secondary mb-1 uppercase tracking-wider font-semibold">{stat.label}</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`font-display font-bold text-aura-text ${stat.locked ? 'text-xl text-aura-violet' : 'text-3xl'}`}>{stat.value}</p>
+                        {stat.locked && <LucideSettings className="w-4 h-4 text-aura-violet animate-spin-slow" />}
+                      </div>
+                    </div>
+                    <div className={`w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center ${stat.color}`}><stat.icon className="w-6 h-6" /></div>
+                  </div>
+                ))}
+              </div>
+
+              {activeTab !== 'affiliate' && activeTab !== 'team' && (
+                <div className="glass-card p-8 border-aura-glass-border">
+                  <h3 className="font-display font-bold text-xl text-aura-text mb-6">Profile Details</h3>
+                  <div className="flex flex-col md:flex-row gap-8 items-start">
+                    <div className="relative group">
+                      <label className="w-24 h-24 rounded-full bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center relative overflow-hidden cursor-pointer">
+                        {isUploadingAvatar ? <LucideLoader2 className="w-8 h-8 text-aura-violet animate-spin" /> : auraTree?.avatarUrl ? <img src={auraTree?.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <LucideCamera className="w-8 h-8 text-aura-text-secondary" />}
+                        <input type="file" accept="image/*" className="hidden" disabled={isUploadingAvatar} onChange={handleAvatarUpload} />
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><span className="text-[10px] font-bold text-white uppercase tracking-wider">Change</span></div>
+                      </label>
+                      {auraTree?.avatarUrl && (
+                        <button onClick={() => setShowDeleteAvatarModal(true)} className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-aura-navy hover:bg-red-600 transition-colors" title="Remove Picture"><LucideX className="w-4 h-4" /></button>
+                      )}
+                    </div>
+                    <div className="flex-1 w-full space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-aura-text-secondary uppercase tracking-widest">Display Name</label>
+                          <input type="text" value={auraTree?.displayName || ''} onChange={(e) => setAuraTree((prev: any) => ({ ...prev, displayName: e.target.value }))} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all font-medium" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-aura-text-secondary uppercase tracking-widest">Bio</label>
+                          <textarea rows={1} placeholder="Write a short bio about yourself..." value={auraTree?.bio || ''} onChange={(e) => setAuraTree((prev: any) => ({ ...prev, bio: e.target.value }))} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all resize-none font-medium" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button onClick={() => handleUpdateProfile()} disabled={isUpdatingProfile} className="btn-primary py-2.5 px-8 text-sm font-bold shadow-lg shadow-aura-violet/20 flex items-center gap-2">
+                          {isUpdatingProfile ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : <><LucideCheck className="w-4 h-4" /> Save Profile</>}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div id="dashboard-editor">
+                {activeTab === 'affiliate' && <AffiliateSection userData={userData} auraTreeId={auraTree?.id} />}
+                {activeTab === 'team' && (
+                  <div className="animate-in fade-in slide-in-from-bottom duration-500 space-y-8">
+                    <div className="glass-card p-6 lg:p-10 border-aura-glass-border">
+                      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 mb-10">
+                        <div>
+                          <h2 className="font-display font-bold text-2xl lg:text-3xl text-aura-text">Team Management</h2>
+                          <p className="text-aura-text-secondary text-sm mt-2">Add up to 5 members to manage this Aura Page.</p>
+                        </div>
+                        {isOwner && (
+                          <form onSubmit={handleAddMember} className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                            <input 
+                              type="email" 
+                              placeholder="User Email" 
+                              required
+                              value={newMemberEmail}
+                              onChange={e => setNewMemberEmail(e.target.value)}
+                              className="flex-1 xl:w-72 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all text-sm"
+                            />
+                            <button 
+                              type="submit" 
+                              disabled={isAddingMember || teamMembers.length >= 5}
+                              className="px-8 py-3 rounded-2xl bg-aura-violet text-white font-bold hover:bg-aura-violet/90 transition-all disabled:opacity-50 whitespace-nowrap shadow-lg shadow-aura-violet/20"
+                            >
+                              {isAddingMember ? <LucideLoader2 className="w-5 h-5 animate-spin" /> : 'Add Member'}
+                            </button>
+                          </form>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        {isFetchingTeam ? (
+                          <div className="py-20 flex justify-center"><LucideLoader2 className="w-10 h-10 text-aura-violet animate-spin" /></div>
+                        ) : teamMembers.length === 0 ? (
+                          <div className="py-16 text-center bg-white/[0.02] rounded-[32px] border border-dashed border-white/10">
+                            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
+                              <LucideUsers className="w-8 h-8 text-aura-text-secondary opacity-30" />
+                            </div>
+                            <p className="text-aura-text-secondary font-medium">No team members added yet.</p>
+                            <p className="text-[10px] text-aura-text-secondary/50 uppercase tracking-widest mt-2">Team collaborative features will appear here</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {teamMembers.map((member) => (
+                              <div key={member.id} className="flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-aura-violet/30 transition-all group">
+                                <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-aura-violet/20 flex items-center justify-center overflow-hidden border-2 border-white/5">
+                                  {member.avatarUrl ? <img src={member.avatarUrl} className="w-full h-full object-cover" /> : <span className="text-aura-violet font-bold text-lg">{member.displayName?.charAt(0)}</span>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-aura-text truncate text-sm lg:text-base">{member.displayName}</p>
+                                  <p className="text-xs text-aura-text-secondary truncate mt-0.5">{member.email}</p>
+                                </div>
+                                {isOwner && (
+                                  <button 
+                                    onClick={() => handleRemoveMember(member.id)}
+                                    className="p-2.5 rounded-xl hover:bg-red-500/10 text-aura-text-secondary hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Remove Member"
+                                  >
+                                    <LucideX className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-10 p-5 bg-aura-violet/5 border border-aura-violet/20 rounded-[24px]">
+                        <div className="flex gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-aura-violet/20 flex items-center justify-center shrink-0">
+                            <LucideShield className="w-5 h-5 text-aura-violet" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-aura-text uppercase tracking-widest mb-1.5">Permissions & Security</p>
+                            <p className="text-xs text-aura-text-secondary leading-relaxed max-w-2xl">
+                              Team members have limited administrative access. They can manage links, customize themes, and view real-time analytics. 
+                              <span className="text-aura-violet font-bold ml-1">Sensitive actions</span> like deleting the Aura page, managing the subscription, or removing other members are restricted to the account owner.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12 ${activeTab === 'affiliate' || activeTab === 'team' ? 'hidden' : ''}`}>
+                  <div className="lg:col-span-7 space-y-6">
+                    {activeTab === 'links' && (
+                      <div className="glass-card flex flex-col shadow-2xl overflow-hidden border-aura-glass-border animate-in fade-in slide-in-from-left duration-500">
+                        <div className="p-6 border-b border-aura-glass-border flex items-center justify-between bg-white/[0.01]">
+                          <div>
+                            <h2 className="font-display font-semibold text-xl text-aura-text">My Links</h2>
+                            <p className="text-xs text-aura-text-secondary mt-1">{links.length} / {isFree ? '5' : '∞'} links used</p>
+                          </div>
+                          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-aura-violet text-white text-sm font-bold hover:bg-aura-violet/90 transition-all shadow-lg shadow-aura-violet/20 active:scale-95"><LucidePlus className="w-4 h-4" /> Add Link</button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                          {links.length === 0 ? (
+                            <div className="py-12 flex flex-col items-center justify-center text-center opacity-50">
+                              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4"><LucideLinkIcon className="w-8 h-8 text-aura-text-secondary" /></div>
+                              <h3 className="text-aura-text font-medium">No links yet</h3>
+                              <p className="text-aura-text-secondary text-sm max-w-xs">Paste a URL to get started. We'll automatically detect the platform.</p>
+                            </div>
+                          ) : links.map((link) => (
+                            <div key={link.id} className={`flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-aura-violet/30 transition-all group shadow-sm ${link.isOptimistic ? 'opacity-50 grayscale cursor-wait' : ''}`}>
+                              <div className="cursor-grab text-aura-text-secondary/30 hover:text-aura-violet"><LucideGripVertical className="w-5 h-5" /></div>
+                              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shadow-inner" style={{ color: getPlatformDetails(link.platform).color }}><PlatformIcon platform={link.platform} className="w-6 h-6" useColor={true} /></div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-aura-text font-bold truncate">{link.title}</h4>
+                                <p className="text-xs text-aura-text-secondary truncate">{link.url}</p>
+                              </div>
+                              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {!link.isOptimistic && (
+                                  <>
+                                    <button onClick={() => { setEditingLink(link); setShowEditModal(true); }} className="p-2 rounded-lg hover:bg-white/5 text-aura-text-secondary"><LucideSettings className="w-4 h-4" /></button>
+                                    <button onClick={() => { setDeletingLink(link); setShowDeleteModal(true); }} className="p-2 rounded-lg hover:bg-red-500/10 text-red-500/70 hover:text-red-500"><LucideX className="w-4 h-4" /></button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="p-6 pt-0 mt-4 border-t border-white/5">
+                          <button 
+                            onClick={handleShareClick} 
+                            className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-2xl shadow-aura-violet/30 hover:scale-[1.02] transition-transform whitespace-nowrap"
+                          >
+                            Publish & Generate Link Page <LucideShare className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'appearance' && (
+                      <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
+                        <div className="glass-card p-8 border-aura-glass-border relative">
+                          {isFree && (
+                            <div className="absolute inset-0 z-10 bg-aura-navy/40 backdrop-blur-[2px] flex items-center justify-center rounded-[24px]">
+                              <div className="glass-card p-6 flex flex-col items-center text-center max-w-sm shadow-2xl border-aura-violet/30">
+                                <LucideZap className="w-10 h-10 text-aura-violet mb-4 animate-pulse" />
+                                <h4 className="text-aura-text font-bold text-lg">Premium Themes</h4>
+                                <p className="text-aura-text-secondary text-xs mt-2 mb-6">Upgrade to Pro to unlock stunning glassmorphic themes and custom backgrounds.</p>
+                                <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-xs font-bold uppercase tracking-widest">Unlock Now</button>
+                              </div>
+                            </div>
+                          )}
+                          <h3 className="font-display font-bold text-xl text-aura-text mb-6">Visual Theme</h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {THEMES.map((theme) => (
+                              <button key={theme.id} disabled={isFree} onClick={() => handleUpdateProfile({ theme: { background: theme.background, accentColor: theme.accent } })} className={`p-4 rounded-2xl border-2 transition-all text-left group ${auraTree?.theme?.background === theme.background ? 'border-aura-violet bg-aura-violet/5' : 'border-white/5 hover:border-white/20'}`}>
+                                <div className={`w-full aspect-video rounded-lg mb-3 ${theme.preview} border border-white/10 overflow-hidden relative`}><div className="absolute bottom-2 left-2 w-4 h-4 rounded-full" style={{ background: theme.accent }} /></div>
+                                <span className="text-sm font-bold text-aura-text group-hover:text-aura-violet transition-colors">{theme.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'analytics' && (
+                      <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
+                        {isFree ? (
+                          <div className="glass-card p-12 text-center flex flex-col items-center justify-center border-aura-glass-border">
+                            <div className="w-20 h-20 rounded-3xl bg-aura-violet/10 flex items-center justify-center mb-6">
+                              <LucideBarChart3 className="w-10 h-10 text-aura-violet" />
+                            </div>
+                            <h2 className="text-2xl font-display font-bold text-aura-text mb-4">Deep Analytics</h2>
+                            <p className="text-aura-text-secondary max-w-md mx-auto mb-8">Detailed insights into your audience behavior, top links, and traffic trends.</p>
+                            <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-4 px-10 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                              <LucideZap className="w-4 h-4" /> Upgrade to Pro to View
+                            </button>
+                          </div>
+                        ) : isFetchingAnalytics ? (
+                          <div className="py-20 flex flex-col items-center justify-center">
+                            <LucideLoader2 className="w-10 h-10 text-aura-violet animate-spin" />
+                            <p className="text-aura-text-secondary mt-4 animate-pulse font-medium">Crunching your data...</p>
+                          </div>
+                        ) : !analyticsData ? (
+                          <div className="glass-card p-12 text-center flex flex-col items-center justify-center border-aura-glass-border">
+                            <LucideBarChart3 className="w-16 h-16 text-aura-violet mb-6 opacity-50" />
+                            <h2 className="text-2xl font-display font-bold text-aura-text mb-4">No data yet</h2>
+                            <p className="text-aura-text-secondary max-w-md mx-auto">Your analytics will appear here once you share your link and get visits.</p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Analytics Overview Cards */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                              {[
+                                { 
+                                  label: 'Total Visits', 
+                                  value: analyticsData.totalVisits, 
+                                  icon: LucideUsers, 
+                                  color: 'text-aura-violet', 
+                                  bg: 'bg-aura-violet/10',
+                                  growth: analyticsData.growth?.visits
+                                },
+                                { 
+                                  label: 'Total Clicks', 
+                                  value: analyticsData.totalClicks, 
+                                  icon: LucideLink2, 
+                                  color: 'text-aura-cyan', 
+                                  bg: 'bg-aura-cyan/10',
+                                  growth: analyticsData.growth?.clicks
+                                },
+                                { 
+                                  label: 'Avg. CTR', 
+                                  value: analyticsData.totalVisits > 0 ? `${((analyticsData.totalClicks / analyticsData.totalVisits) * 100).toFixed(1)}%` : '0%', 
+                                  icon: LucideBarChart3, 
+                                  color: 'text-aura-mint', 
+                                  bg: 'bg-aura-mint/10' 
+                                },
+                                { 
+                                  label: 'QR Scans', 
+                                  value: analyticsData.totalQrScans, 
+                                  icon: LucideQrCode, 
+                                  color: 'text-aura-pink', 
+                                  bg: 'bg-aura-pink/10' 
+                                },
+                              ].map((stat, i) => (
+                                <div key={i} className="glass-card p-6 flex flex-col gap-4 border-aura-glass-border">
+                                  <div className="flex justify-between items-start">
+                                    <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                                      <stat.icon className="w-6 h-6" />
+                                    </div>
+                                    {stat.growth && (
+                                      <div className="flex gap-4">
+                                        <div className="text-right">
+                                          <div className={`flex items-center gap-1 text-[10px] font-bold ${stat.growth.weekly >= 0 ? 'text-aura-mint' : 'text-red-400'}`}>
+                                            {stat.growth.weekly >= 0 ? '+' : ''}{stat.growth.weekly}%
+                                            <TrendingUp className={`w-3 h-3 ${stat.growth.weekly < 0 ? 'rotate-180' : ''}`} />
+                                          </div>
+                                          <p className="text-[8px] text-aura-text-secondary uppercase mt-0.5">This Week</p>
+                                        </div>
+                                        <div className="text-right">
+                                          <div className={`flex items-center gap-1 text-[10px] font-bold ${stat.growth.monthly >= 0 ? 'text-aura-mint' : 'text-red-400'}`}>
+                                            {stat.growth.monthly >= 0 ? '+' : ''}{stat.growth.monthly}%
+                                            <TrendingUp className={`w-3 h-3 ${stat.growth.monthly < 0 ? 'rotate-180' : ''}`} />
+                                          </div>
+                                          <p className="text-[8px] text-aura-text-secondary uppercase mt-0.5">This Month</p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-3xl font-display font-bold text-aura-text">{stat.value}</p>
+                                    <div className="flex justify-between items-center mt-1">
+                                      <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest">{stat.label}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Traffic Chart */}
+                            <div className="glass-card p-8 border-aura-glass-border">
+                              <div className="flex items-center justify-between mb-8">
+                                <div>
+                                  <h3 className="font-display font-bold text-xl text-aura-text">Traffic Trends</h3>
+                                  <p className="text-xs text-aura-text-secondary mt-1">Unique visits and clicks over the last 14 days</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-aura-violet" />
+                                    <span className="text-[10px] font-bold text-aura-text-secondary uppercase">Visits</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-aura-cyan" />
+                                    <span className="text-[10px] font-bold text-aura-text-secondary uppercase">Clicks</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={analyticsData.timeSeries}>
+                                    <defs>
+                                      <linearGradient id="colorVisits" x1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#7B61FF" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#7B61FF" stopOpacity={0}/>
+                                      </linearGradient>
+                                      <linearGradient id="colorClicks" x1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#00D9FF" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#00D9FF" stopOpacity={0}/>
+                                      </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                    <XAxis 
+                                      dataKey="date" 
+                                      axisLine={false} 
+                                      tickLine={false} 
+                                      tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                                      tickFormatter={(str) => {
+                                        const d = new Date(str);
+                                        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                      }}
+                                    />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} />
+                                    <Tooltip 
+                                      contentStyle={{ background: '#070913', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: '#fff' }}
+                                      itemStyle={{ fontSize: '12px' }}
+                                    />
+                                    <Area type="monotone" dataKey="visits" stroke="#7B61FF" fillOpacity={1} fill="url(#colorVisits)" strokeWidth={3} />
+                                    <Area type="monotone" dataKey="clicks" stroke="#00D9FF" fillOpacity={1} fill="url(#colorClicks)" strokeWidth={3} />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                              {/* Top Links Bar Chart */}
+                              <div className="glass-card p-8 border-aura-glass-border">
+                                <h3 className="font-display font-bold text-xl text-aura-text mb-8">Link Performance</h3>
+                                <div className="h-[250px] w-full">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={analyticsData.links.sort((a: any, b: any) => b.clickCount - a.clickCount).slice(0, 5)} layout="vertical">
+                                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                                      <XAxis type="number" hide />
+                                      <YAxis 
+                                        dataKey="title" 
+                                        type="category" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        width={100}
+                                        tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 'bold' }}
+                                      />
+                                      <Tooltip 
+                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                        contentStyle={{ background: '#070913', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                      />
+                                      <Bar dataKey="clickCount" radius={[0, 4, 4, 0]}>
+                                        {analyticsData.links.map((entry: any, index: number) => (
+                                          <Cell key={`cell-${index}`} fill={index === 0 ? '#7B61FF' : 'rgba(123,97,255,0.4)'} />
+                                        ))}
+                                      </Bar>
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              </div>
+
+                              {/* Detailed List */}
+                              <div className="glass-card overflow-hidden border-aura-glass-border">
+                                <div className="p-6 border-b border-white/5 bg-white/[0.01]">
+                                  <h3 className="font-display font-bold text-lg text-aura-text">Engagement by Platform</h3>
+                                </div>
+                                <div className="divide-y divide-white/5">
+                                  {analyticsData.links.map((link: any, i: number) => (
+                                    <div key={i} className="p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                          <PlatformIcon platform={link.platform} className="w-4 h-4" useColor={true} />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-bold text-aura-text">{link.title}</p>
+                                          <p className="text-[10px] text-aura-text-secondary uppercase tracking-widest">{link.platform}</p>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-sm font-bold text-aura-text">{link.clickCount} <span className="text-[10px] text-aura-text-secondary font-normal ml-1 uppercase">Clicks</span></p>
+                                        <div className="w-24 h-1 bg-white/5 rounded-full mt-1 overflow-hidden">
+                                          <div 
+                                            className="h-full bg-aura-cyan" 
+                                            style={{ width: `${analyticsData.totalClicks > 0 ? (link.clickCount / analyticsData.totalClicks) * 100 : 0}%` }} 
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                      <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
+                        <div className="glass-card p-8 border-aura-glass-border">
+                          <h3 className="font-display font-bold text-xl text-aura-text mb-6">Manage Subscription</h3>
+                          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                              <div className={`w-14 h-14 rounded-2xl ${isFree ? 'bg-white/5' : 'bg-aura-violet/20'} flex items-center justify-center`}>{isFree ? <LucideSparkles className="w-7 h-7 text-aura-text-secondary" /> : <LucideZap className="w-7 h-7 text-aura-violet" />}</div>
+                              <div>
+                                <p className="text-xs font-bold text-aura-text-secondary uppercase tracking-widest">Current Plan</p>
+                                <h4 className="text-xl font-display font-bold text-aura-text capitalize">{userData?.subscription?.plan || 'Free'}</h4>
+                                {!isFree && userData?.subscription?.status === 'active' && <p className="text-xs text-aura-mint font-medium mt-1">Renews on {new Date(userData.subscription.expiresAt).toLocaleDateString()}</p>}
+                                {userData?.subscription?.status === 'cancelled' && <p className="text-xs text-aura-pink font-medium mt-1">Ends on {new Date(userData.subscription.expiresAt).toLocaleDateString()}</p>}
+                              </div>
+                            </div>
+                            {isFree ? <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-sm font-bold">Upgrade Plan</button> : userData?.subscription?.status === 'active' ? <button onClick={handleCancelSubscription} disabled={isCancelling} className="px-6 py-3 rounded-xl border border-red-500/30 text-red-500 text-sm font-bold hover:bg-red-500/10 transition-all disabled:opacity-50">{isCancelling ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : 'Cancel Subscription'}</button> : <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-sm font-bold">Resubscribe</button>}
+                          </div>
+                          <div className="mt-8 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                            <div>
+                              <h4 className="text-sm font-bold text-aura-text mb-4 uppercase tracking-widest">Account Security</h4>
+                              <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-aura-text-secondary hover:text-white transition-colors text-sm font-medium"><LucideShield className="w-4 h-4" /> Change Password</button>
+                            </div>
+                            <div className="h-12 w-px bg-white/5 hidden sm:block" />
+                            <div>
+                              <h4 className="text-sm font-bold text-aura-text mb-4 uppercase tracking-widest">Feedback</h4>
+                              <button onClick={() => setShowReviewModal(true)} className="flex items-center gap-2 text-aura-violet hover:text-aura-cyan transition-colors text-sm font-bold"><LucideSparkles className="w-4 h-4" /> Leave a Review</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="lg:col-span-5 flex flex-col items-center">
+                    <div className="sticky top-24 w-full max-w-[300px]">
+                      <p className="text-xs font-bold text-aura-text-secondary uppercase tracking-[0.2em] text-center mb-6">Live Preview</p>
+                      <div className="relative w-full aspect-[9/19] rounded-[48px] bg-aura-navy p-3 border-[8px] border-aura-text/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden">
+                        <div className="w-full h-full rounded-[36px] overflow-hidden relative flex flex-col" style={{ background: auraTree?.theme?.background || 'linear-gradient(135deg, #070913 0%, #0B1025 50%, #070913 100%)' }}>
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-7 bg-aura-navy/40 backdrop-blur-md rounded-b-3xl z-10" />
+                          <div className="flex-1 flex flex-col items-center pt-14 px-6 overflow-y-auto no-scrollbar relative z-10">
+                            <div className="w-20 h-20 rounded-full p-0.5 mb-4 shadow-xl relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${auraTree?.theme?.accentColor || '#7B61FF'}, #00D9FF)` }}>
+                              <div className="w-full h-full rounded-full bg-aura-navy flex items-center justify-center font-display font-bold text-2xl text-aura-text overflow-hidden">{auraTree?.avatarUrl ? <img src={auraTree.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : (auraTree?.displayName || userData?.displayName || 'U').charAt(0).toUpperCase()}</div>
+                            </div>
+                            <h3 className={`font-display font-bold text-lg text-center leading-tight ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-900' : 'text-aura-text'}`}>{auraTree?.displayName || userData?.displayName || '@username'}</h3>
+                            <p className={`text-[10px] text-center mt-2 max-w-[180px] line-clamp-3 ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-600' : 'text-aura-text-secondary'}`}>{auraTree?.bio || 'Add a bio to tell your audience who you are.'}</p>
+                            <div className="w-full mt-8 space-y-3">
+                              {links.map((link) => (
+                                <div key={link.id} className={`w-full p-3 flex items-center gap-3 shadow-lg backdrop-blur-md transition-transform active:scale-95 group ${auraTree?.theme?.cardStyle || 'rounded-2xl'} ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'bg-white/40 border-slate-200' : 'bg-white/[0.05] border-white/5'}`}>
+                                  <div className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${auraTree?.theme?.cardStyle === 'rounded-full' ? 'rounded-full' : auraTree?.theme?.cardStyle === 'rounded-none' ? 'rounded-none' : 'rounded-lg'} bg-white/5`} style={{ color: getPlatformDetails(link.platform).color }}><PlatformIcon platform={link.platform} className="w-4 h-4" useColor={true} /></div>
+                                  <span className={`text-[11px] font-bold truncate flex-1 text-center pr-8 ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-800' : 'text-aura-text'}`}>{link.title}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="h-14 flex flex-col items-center justify-center flex-shrink-0 opacity-40">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
+                                <img src="/aura%20tree%20logo.png" className="w-full h-full object-contain scale-[3.2]" style={{ filter: THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'none' : 'invert(1)' }} alt="" />
+                              </div>
+                              <span className={`text-[8px] font-bold uppercase tracking-widest ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-900' : 'text-white'}`}>Aura Tree</span>
+                            </div>
+                            <div className={`w-16 h-1 rounded-full ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'bg-slate-300' : 'bg-white/10'}`} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* Mobile Bottom Navigation - Restored outside main content for absolute bottom placement */}
+      <nav 
+        className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-aura-navy/95 backdrop-blur-xl border-t border-aura-glass-border flex items-center overflow-x-auto no-scrollbar px-1 z-[9999]"
+      >
         <div className="flex items-center justify-between w-full min-w-max sm:min-w-0">
           {navItems.map((item) => (
             <button
@@ -1140,635 +1773,7 @@ const Dashboard = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto scroll-smooth pb-20 lg:pb-0" data-lenis-prevent>
-        <header className="h-16 border-b border-aura-glass-border flex items-center justify-between px-4 lg:px-8 bg-white/[0.01] backdrop-blur-md sticky top-0 z-20 shrink-0">
-          <div className="flex items-center gap-4">
-            <button onClick={() => { window.location.href = '/'; }} className="p-2 -ml-2 rounded-lg hover:bg-white/5 text-aura-text-secondary hover:text-aura-text transition-colors flex items-center gap-2 text-sm font-medium">
-              <LucideArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Site</span>
-            </button>
-            
-            <div className="h-8 w-px bg-white/10 hidden sm:block" />
-
-            {/* Page Switcher */}
-            <div className="relative" ref={switcherRef}>
-              <button 
-                onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}
-                className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all text-aura-text group text-left"
-              >
-                <div className="w-8 h-8 rounded-lg bg-aura-violet/20 flex items-center justify-center text-aura-violet font-bold text-xs uppercase">
-                  {auraTree?.displayName?.charAt(0) || 'A'}
-                </div>
-                <div className="hidden sm:block">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-bold leading-none">{auraTree?.displayName}</p>
-                    {auraTree?.role === 'member' && <span className="text-[8px] bg-aura-violet/20 text-aura-violet px-1.5 py-0.5 rounded-full uppercase font-bold">Team Member</span>}
-                  </div>
-                  <p className="text-[10px] text-aura-text-secondary mt-1">/{auraTree?.slug}</p>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-aura-text-secondary transition-transform duration-300 ${isSwitcherOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isSwitcherOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-aura-navy border border-aura-glass-border rounded-2xl shadow-2xl backdrop-blur-xl z-[100] p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest px-3 py-2">My Aura Pages</p>
-                  <div className="space-y-1 max-h-60 overflow-y-auto no-scrollbar">
-                    {allAuraTrees.map((tree) => (
-                      <div
-                        key={tree.id}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                          auraTree?.id === tree.id 
-                            ? 'bg-aura-violet/10 text-aura-violet' 
-                            : 'text-aura-text-secondary hover:bg-white/5 hover:text-aura-text'
-                        }`}
-                        onClick={() => handlePageSwitch(tree.id)}
-                      >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${auraTree?.id === tree.id ? 'bg-aura-violet text-white' : 'bg-white/5'}`}>
-                          {tree.displayName?.charAt(0)}
-                        </div>
-                        <div className="text-left flex-1 min-w-0">
-                          <p className="text-xs font-bold truncate">{tree.displayName}</p>
-                          <div className="flex items-center gap-1">
-                            <p className="text-[9px] opacity-60 truncate">/{tree.slug}</p>
-                            {tree.role === 'member' && <span className="text-[7px] text-aura-violet font-bold uppercase">Team</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {auraTree?.id === tree.id && <LucideCheck className="w-3 h-3 text-aura-violet" />}
-                          {tree.role === 'owner' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeletingPage(tree);
-                                setShowDeletePageModal(true);
-                                setIsSwitcherOpen(false);
-                              }}
-                              className="p-1.5 rounded-lg hover:bg-red-500/10 text-aura-text-secondary hover:text-red-500 transition-colors"
-                              title="Delete Page"
-                            >
-                              <LucideTrash className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="h-px bg-white/5 my-2" />
-                  
-                  <button 
-                    onClick={() => { setShowCreatePageModal(true); setIsSwitcherOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-aura-mint hover:bg-aura-mint/5 transition-all font-bold text-xs"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-aura-mint/10 flex items-center justify-center">
-                      <LucidePlus className="w-4 h-4" />
-                    </div>
-                    Create New Page
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {!userData?.isAffiliate && (
-              <button onClick={() => setActiveTab('affiliate')} className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-aura-violet/10 border border-aura-violet/20 text-aura-violet text-sm font-bold hover:bg-aura-violet/20 transition-all">
-                <LucideUsers className="w-4 h-4" /> Become an Affiliate
-              </button>
-            )}
-            <button onClick={handleShareClick} className="hidden sm:flex btn-primary py-2 px-6 text-sm font-bold shadow-lg shadow-aura-violet/20">
-              Share Profile
-            </button>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-aura-violet to-aura-cyan p-0.5 overflow-hidden">
-              <div className="w-full h-full rounded-full bg-aura-navy flex items-center justify-center font-bold text-aura-text overflow-hidden">
-                {auraTree?.avatarUrl ? <img src={auraTree.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : (auraTree?.displayName || userData?.displayName || 'U').charAt(0).toUpperCase()}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="flex-1 p-4 lg:p-8 overflow-y-auto" data-lenis-prevent>
-          <div className="max-w-6xl mx-auto space-y-8">
-            {userData?.subscription?.plan !== 'teams' && isOwner && (
-              <div className="glass-card p-6 border-aura-violet/30 bg-gradient-to-r from-aura-violet/10 to-transparent relative overflow-hidden group">
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="space-y-2 text-center md:text-left">
-                    <h2 className="font-display font-bold text-xl text-aura-text flex items-center gap-2 justify-center md:justify-start">
-                      <LucideSparkles className="w-5 h-5 text-aura-pink animate-pulse" /> Elevate your Aura
-                    </h2>
-                    <p className="text-aura-text-secondary text-sm max-w-xl">
-                      {isFree ? 'Unlock premium glassmorphic themes, full branding control, and a 100% ad-free experience by upgrading to Pro.' : 'Remove the "aura-" prefix entirely and enjoy an ad-free workspace with the Teams plan.'}
-                    </p>
-                  </div>
-                  <button onClick={() => { window.location.href = '/#pricing'; }} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
-                    Upgrade Now
-                  </button>
-                </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-aura-violet/10 blur-[100px] -mr-32 -mt-32 rounded-full" />
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-              {[
-                { label: 'Total Visits', value: isFree ? 'Unlock' : (auraTree?.viewCount || '0'), icon: LucideBarChart3, color: 'text-aura-violet', locked: isFree },
-                { label: 'Link Clicks', value: isFree ? 'Unlock' : (links.reduce((acc, curr) => acc + (curr.clickCount || 0), 0)), icon: LucideLink2, color: 'text-aura-cyan', locked: isFree },
-                { label: 'QR Scans', value: isFree ? 'Unlock' : (auraTree?.qrScanCount || '0'), icon: LucideQrCode, color: 'text-aura-mint', locked: isFree },
-                { label: 'Aura Score', value: auraTree?.auraScore || '0', icon: LucideSparkles, color: 'text-aura-pink', glow: (auraTree?.auraScore || 0) >= 80 },
-              ].map((stat, i) => (
-                <div key={i} className={`glass-card p-6 flex items-center justify-between transition-all duration-500 ${stat.glow ? 'shadow-[0_0_30px_rgba(123,97,255,0.3)] border-aura-violet/30 animate-pulse-glow' : ''} ${stat.locked ? 'cursor-pointer group hover:border-aura-violet/30' : ''}`}>
-                  <div>
-                    <p className="text-xs text-aura-text-secondary mb-1 uppercase tracking-wider font-semibold">{stat.label}</p>
-                    <div className="flex items-center gap-2">
-                      <p className={`font-display font-bold text-aura-text ${stat.locked ? 'text-xl text-aura-violet' : 'text-3xl'}`}>{stat.value}</p>
-                      {stat.locked && <LucideSettings className="w-4 h-4 text-aura-violet animate-spin-slow" />}
-                    </div>
-                  </div>
-                  <div className={`w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center ${stat.color}`}><stat.icon className="w-6 h-6" /></div>
-                </div>
-              ))}
-            </div>
-
-            {activeTab !== 'affiliate' && activeTab !== 'team' && (
-              <div className="glass-card p-8 border-aura-glass-border">
-                <h3 className="font-display font-bold text-xl text-aura-text mb-6">Profile Details</h3>
-                <div className="flex flex-col md:flex-row gap-8 items-start">
-                  <div className="relative group">
-                    <label className="w-24 h-24 rounded-full bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center relative overflow-hidden cursor-pointer">
-                      {isUploadingAvatar ? <LucideLoader2 className="w-8 h-8 text-aura-violet animate-spin" /> : auraTree?.avatarUrl ? <img src={auraTree?.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <LucideCamera className="w-8 h-8 text-aura-text-secondary" />}
-                      <input type="file" accept="image/*" className="hidden" disabled={isUploadingAvatar} onChange={handleAvatarUpload} />
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><span className="text-[10px] font-bold text-white uppercase tracking-wider">Change</span></div>
-                    </label>
-                    {auraTree?.avatarUrl && (
-                      <button onClick={() => setShowDeleteAvatarModal(true)} className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-aura-navy hover:bg-red-600 transition-colors" title="Remove Picture"><LucideX className="w-4 h-4" /></button>
-                    )}
-                  </div>
-                  <div className="flex-1 w-full space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-aura-text-secondary uppercase tracking-widest">Display Name</label>
-                        <input type="text" value={auraTree?.displayName || ''} onChange={(e) => setAuraTree((prev: any) => ({ ...prev, displayName: e.target.value }))} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all font-medium" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-aura-text-secondary uppercase tracking-widest">Bio</label>
-                        <textarea rows={1} placeholder="Write a short bio about yourself..." value={auraTree?.bio || ''} onChange={(e) => setAuraTree((prev: any) => ({ ...prev, bio: e.target.value }))} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all resize-none font-medium" />
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <button onClick={() => handleUpdateProfile()} disabled={isUpdatingProfile} className="btn-primary py-2.5 px-8 text-sm font-bold shadow-lg shadow-aura-violet/20 flex items-center gap-2">
-                        {isUpdatingProfile ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : <><LucideCheck className="w-4 h-4" /> Save Profile</>}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div id="dashboard-editor">
-              {activeTab === 'affiliate' && <AffiliateSection userData={userData} auraTreeId={auraTree?.id} />}
-              {activeTab === 'team' && (
-                <div className="animate-in fade-in slide-in-from-bottom duration-500 space-y-8">
-                  <div className="glass-card p-6 lg:p-10 border-aura-glass-border">
-                    <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 mb-10">
-                      <div>
-                        <h2 className="font-display font-bold text-2xl lg:text-3xl text-aura-text">Team Management</h2>
-                        <p className="text-aura-text-secondary text-sm mt-2">Add up to 5 members to manage this Aura Page.</p>
-                      </div>
-                      {isOwner && (
-                        <form onSubmit={handleAddMember} className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-                          <input 
-                            type="email" 
-                            placeholder="User Email" 
-                            required
-                            value={newMemberEmail}
-                            onChange={e => setNewMemberEmail(e.target.value)}
-                            className="flex-1 xl:w-72 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all text-sm"
-                          />
-                          <button 
-                            type="submit" 
-                            disabled={isAddingMember || teamMembers.length >= 5}
-                            className="px-8 py-3 rounded-2xl bg-aura-violet text-white font-bold hover:bg-aura-violet/90 transition-all disabled:opacity-50 whitespace-nowrap shadow-lg shadow-aura-violet/20"
-                          >
-                            {isAddingMember ? <LucideLoader2 className="w-5 h-5 animate-spin" /> : 'Add Member'}
-                          </button>
-                        </form>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      {isFetchingTeam ? (
-                        <div className="py-20 flex justify-center"><LucideLoader2 className="w-10 h-10 text-aura-violet animate-spin" /></div>
-                      ) : teamMembers.length === 0 ? (
-                        <div className="py-16 text-center bg-white/[0.02] rounded-[32px] border border-dashed border-white/10">
-                          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
-                            <LucideUsers className="w-8 h-8 text-aura-text-secondary opacity-30" />
-                          </div>
-                          <p className="text-aura-text-secondary font-medium">No team members added yet.</p>
-                          <p className="text-[10px] text-aura-text-secondary/50 uppercase tracking-widest mt-2">Team collaborative features will appear here</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {teamMembers.map((member) => (
-                            <div key={member.id} className="flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-aura-violet/30 transition-all group">
-                              <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-aura-violet/20 flex items-center justify-center overflow-hidden border-2 border-white/5">
-                                {member.avatarUrl ? <img src={member.avatarUrl} className="w-full h-full object-cover" /> : <span className="text-aura-violet font-bold text-lg">{member.displayName?.charAt(0)}</span>}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-aura-text truncate text-sm lg:text-base">{member.displayName}</p>
-                                <p className="text-xs text-aura-text-secondary truncate mt-0.5">{member.email}</p>
-                              </div>
-                              {isOwner && (
-                                <button 
-                                  onClick={() => handleRemoveMember(member.id)}
-                                  className="p-2.5 rounded-xl hover:bg-red-500/10 text-aura-text-secondary hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                  title="Remove Member"
-                                >
-                                  <LucideX className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-10 p-5 bg-aura-violet/5 border border-aura-violet/20 rounded-[24px]">
-                      <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-aura-violet/20 flex items-center justify-center shrink-0">
-                          <LucideShield className="w-5 h-5 text-aura-violet" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-aura-text uppercase tracking-widest mb-1.5">Permissions & Security</p>
-                          <p className="text-xs text-aura-text-secondary leading-relaxed max-w-2xl">
-                            Team members have limited administrative access. They can manage links, customize themes, and view real-time analytics. 
-                            <span className="text-aura-violet font-bold ml-1">Sensitive actions</span> like deleting the Aura page, managing the subscription, or removing other members are restricted to the account owner.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12 ${activeTab === 'affiliate' || activeTab === 'team' ? 'hidden' : ''}`}>
-                <div className="lg:col-span-7 space-y-6">
-                  {activeTab === 'links' && (
-                    <div className="glass-card flex flex-col shadow-2xl overflow-hidden border-aura-glass-border animate-in fade-in slide-in-from-left duration-500">
-                      <div className="p-6 border-b border-aura-glass-border flex items-center justify-between bg-white/[0.01]">
-                        <div>
-                          <h2 className="font-display font-semibold text-xl text-aura-text">My Links</h2>
-                          <p className="text-xs text-aura-text-secondary mt-1">{links.length} / {isFree ? '5' : '∞'} links used</p>
-                        </div>
-                        <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-aura-violet text-white text-sm font-bold hover:bg-aura-violet/90 transition-all shadow-lg shadow-aura-violet/20 active:scale-95"><LucidePlus className="w-4 h-4" /> Add Link</button>
-                      </div>
-                      <div className="p-6 space-y-4">
-                        {links.length === 0 ? (
-                          <div className="py-12 flex flex-col items-center justify-center text-center opacity-50">
-                            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4"><LucideLinkIcon className="w-8 h-8 text-aura-text-secondary" /></div>
-                            <h3 className="text-aura-text font-medium">No links yet</h3>
-                            <p className="text-aura-text-secondary text-sm max-w-xs">Paste a URL to get started. We'll automatically detect the platform.</p>
-                          </div>
-                        ) : links.map((link) => (
-                          <div key={link.id} className={`flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-aura-violet/30 transition-all group shadow-sm ${link.isOptimistic ? 'opacity-50 grayscale cursor-wait' : ''}`}>
-                            <div className="cursor-grab text-aura-text-secondary/30 hover:text-aura-violet"><LucideGripVertical className="w-5 h-5" /></div>
-                            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shadow-inner" style={{ color: getPlatformDetails(link.platform).color }}><PlatformIcon platform={link.platform} className="w-6 h-6" useColor={true} /></div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-aura-text font-bold truncate">{link.title}</h4>
-                              <p className="text-xs text-aura-text-secondary truncate">{link.url}</p>
-                            </div>
-                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {!link.isOptimistic && (
-                                <>
-                                  <button onClick={() => { setEditingLink(link); setShowEditModal(true); }} className="p-2 rounded-lg hover:bg-white/5 text-aura-text-secondary"><LucideSettings className="w-4 h-4" /></button>
-                                  <button onClick={() => { setDeletingLink(link); setShowDeleteModal(true); }} className="p-2 rounded-lg hover:bg-red-500/10 text-red-500/70 hover:text-red-500"><LucideX className="w-4 h-4" /></button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="p-6 pt-0 mt-4 border-t border-white/5">
-                        <button 
-                          onClick={handleShareClick} 
-                          className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-2xl shadow-aura-violet/30 hover:scale-[1.02] transition-transform whitespace-nowrap"
-                        >
-                          Publish & Generate Link Page <LucideShare className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'appearance' && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
-                      <div className="glass-card p-8 border-aura-glass-border relative">
-                        {isFree && (
-                          <div className="absolute inset-0 z-10 bg-aura-navy/40 backdrop-blur-[2px] flex items-center justify-center rounded-[24px]">
-                            <div className="glass-card p-6 flex flex-col items-center text-center max-w-sm shadow-2xl border-aura-violet/30">
-                              <LucideZap className="w-10 h-10 text-aura-violet mb-4 animate-pulse" />
-                              <h4 className="text-aura-text font-bold text-lg">Premium Themes</h4>
-                              <p className="text-aura-text-secondary text-xs mt-2 mb-6">Upgrade to Pro to unlock stunning glassmorphic themes and custom backgrounds.</p>
-                              <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-xs font-bold uppercase tracking-widest">Unlock Now</button>
-                            </div>
-                          </div>
-                        )}
-                        <h3 className="font-display font-bold text-xl text-aura-text mb-6">Visual Theme</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                          {THEMES.map((theme) => (
-                            <button key={theme.id} disabled={isFree} onClick={() => handleUpdateProfile({ theme: { background: theme.background, accentColor: theme.accent } })} className={`p-4 rounded-2xl border-2 transition-all text-left group ${auraTree?.theme?.background === theme.background ? 'border-aura-violet bg-aura-violet/5' : 'border-white/5 hover:border-white/20'}`}>
-                              <div className={`w-full aspect-video rounded-lg mb-3 ${theme.preview} border border-white/10 overflow-hidden relative`}><div className="absolute bottom-2 left-2 w-4 h-4 rounded-full" style={{ background: theme.accent }} /></div>
-                              <span className="text-sm font-bold text-aura-text group-hover:text-aura-violet transition-colors">{theme.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'analytics' && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
-                      {isFree ? (
-                        <div className="glass-card p-12 text-center flex flex-col items-center justify-center border-aura-glass-border">
-                          <div className="w-20 h-20 rounded-3xl bg-aura-violet/10 flex items-center justify-center mb-6">
-                            <LucideBarChart3 className="w-10 h-10 text-aura-violet" />
-                          </div>
-                          <h2 className="text-2xl font-display font-bold text-aura-text mb-4">Deep Analytics</h2>
-                          <p className="text-aura-text-secondary max-w-md mx-auto mb-8">Detailed insights into your audience behavior, top links, and traffic trends.</p>
-                          <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-4 px-10 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                            <LucideZap className="w-4 h-4" /> Upgrade to Pro to View
-                          </button>
-                        </div>
-                      ) : isFetchingAnalytics ? (
-                        <div className="py-20 flex flex-col items-center justify-center">
-                          <LucideLoader2 className="w-10 h-10 text-aura-violet animate-spin" />
-                          <p className="text-aura-text-secondary mt-4 animate-pulse font-medium">Crunching your data...</p>
-                        </div>
-                      ) : !analyticsData ? (
-                        <div className="glass-card p-12 text-center flex flex-col items-center justify-center border-aura-glass-border">
-                          <LucideBarChart3 className="w-16 h-16 text-aura-violet mb-6 opacity-50" />
-                          <h2 className="text-2xl font-display font-bold text-aura-text mb-4">No data yet</h2>
-                          <p className="text-aura-text-secondary max-w-md mx-auto">Your analytics will appear here once you share your link and get visits.</p>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Analytics Overview Cards */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {[
-                              { 
-                                label: 'Total Visits', 
-                                value: analyticsData.totalVisits, 
-                                icon: LucideUsers, 
-                                color: 'text-aura-violet', 
-                                bg: 'bg-aura-violet/10',
-                                growth: analyticsData.growth?.visits
-                              },
-                              { 
-                                label: 'Total Clicks', 
-                                value: analyticsData.totalClicks, 
-                                icon: LucideLink2, 
-                                color: 'text-aura-cyan', 
-                                bg: 'bg-aura-cyan/10',
-                                growth: analyticsData.growth?.clicks
-                              },
-                              { 
-                                label: 'Avg. CTR', 
-                                value: analyticsData.totalVisits > 0 ? `${((analyticsData.totalClicks / analyticsData.totalVisits) * 100).toFixed(1)}%` : '0%', 
-                                icon: LucideBarChart3, 
-                                color: 'text-aura-mint', 
-                                bg: 'bg-aura-mint/10' 
-                              },
-                              { 
-                                label: 'QR Scans', 
-                                value: analyticsData.totalQrScans, 
-                                icon: LucideQrCode, 
-                                color: 'text-aura-pink', 
-                                bg: 'bg-aura-pink/10' 
-                              },
-                            ].map((stat, i) => (
-                              <div key={i} className="glass-card p-6 flex flex-col gap-4 border-aura-glass-border">
-                                <div className="flex justify-between items-start">
-                                  <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                                    <stat.icon className="w-6 h-6" />
-                                  </div>
-                                  {stat.growth && (
-                                    <div className="flex gap-4">
-                                      <div className="text-right">
-                                        <div className={`flex items-center gap-1 text-[10px] font-bold ${stat.growth.weekly >= 0 ? 'text-aura-mint' : 'text-red-400'}`}>
-                                          {stat.growth.weekly >= 0 ? '+' : ''}{stat.growth.weekly}%
-                                          <TrendingUp className={`w-3 h-3 ${stat.growth.weekly < 0 ? 'rotate-180' : ''}`} />
-                                        </div>
-                                        <p className="text-[8px] text-aura-text-secondary uppercase mt-0.5">This Week</p>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className={`flex items-center gap-1 text-[10px] font-bold ${stat.growth.monthly >= 0 ? 'text-aura-mint' : 'text-red-400'}`}>
-                                          {stat.growth.monthly >= 0 ? '+' : ''}{stat.growth.monthly}%
-                                          <TrendingUp className={`w-3 h-3 ${stat.growth.monthly < 0 ? 'rotate-180' : ''}`} />
-                                        </div>
-                                        <p className="text-[8px] text-aura-text-secondary uppercase mt-0.5">This Month</p>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="text-3xl font-display font-bold text-aura-text">{stat.value}</p>
-                                  <div className="flex justify-between items-center mt-1">
-                                    <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest">{stat.label}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Traffic Chart */}
-                          <div className="glass-card p-8 border-aura-glass-border">
-                            <div className="flex items-center justify-between mb-8">
-                              <div>
-                                <h3 className="font-display font-bold text-xl text-aura-text">Traffic Trends</h3>
-                                <p className="text-xs text-aura-text-secondary mt-1">Unique visits and clicks over the last 14 days</p>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-3 h-3 rounded-full bg-aura-violet" />
-                                  <span className="text-[10px] font-bold text-aura-text-secondary uppercase">Visits</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-3 h-3 rounded-full bg-aura-cyan" />
-                                  <span className="text-[10px] font-bold text-aura-text-secondary uppercase">Clicks</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="h-[300px] w-full">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={analyticsData.timeSeries}>
-                                  <defs>
-                                    <linearGradient id="colorVisits" x1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#7B61FF" stopOpacity={0.3}/>
-                                      <stop offset="95%" stopColor="#7B61FF" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorClicks" x1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#00D9FF" stopOpacity={0.3}/>
-                                      <stop offset="95%" stopColor="#00D9FF" stopOpacity={0}/>
-                                    </linearGradient>
-                                  </defs>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                  <XAxis 
-                                    dataKey="date" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
-                                    tickFormatter={(str) => {
-                                      const d = new Date(str);
-                                      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                    }}
-                                  />
-                                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} />
-                                  <Tooltip 
-                                    contentStyle={{ background: '#070913', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: '#fff' }}
-                                    itemStyle={{ fontSize: '12px' }}
-                                  />
-                                  <Area type="monotone" dataKey="visits" stroke="#7B61FF" fillOpacity={1} fill="url(#colorVisits)" strokeWidth={3} />
-                                  <Area type="monotone" dataKey="clicks" stroke="#00D9FF" fillOpacity={1} fill="url(#colorClicks)" strokeWidth={3} />
-                                </AreaChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Top Links Bar Chart */}
-                            <div className="glass-card p-8 border-aura-glass-border">
-                              <h3 className="font-display font-bold text-xl text-aura-text mb-8">Link Performance</h3>
-                              <div className="h-[250px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <BarChart data={analyticsData.links.sort((a: any, b: any) => b.clickCount - a.clickCount).slice(0, 5)} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                                    <XAxis type="number" hide />
-                                    <YAxis 
-                                      dataKey="title" 
-                                      type="category" 
-                                      axisLine={false} 
-                                      tickLine={false} 
-                                      width={100}
-                                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 'bold' }}
-                                    />
-                                    <Tooltip 
-                                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                      contentStyle={{ background: '#070913', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                    />
-                                    <Bar dataKey="clickCount" radius={[0, 4, 4, 0]}>
-                                      {analyticsData.links.map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={index === 0 ? '#7B61FF' : 'rgba(123,97,255,0.4)'} />
-                                      ))}
-                                    </Bar>
-                                  </BarChart>
-                                </ResponsiveContainer>
-                              </div>
-                            </div>
-
-                            {/* Detailed List */}
-                            <div className="glass-card overflow-hidden border-aura-glass-border">
-                              <div className="p-6 border-b border-white/5 bg-white/[0.01]">
-                                <h3 className="font-display font-bold text-lg text-aura-text">Engagement by Platform</h3>
-                              </div>
-                              <div className="divide-y divide-white/5">
-                                {analyticsData.links.map((link: any, i: number) => (
-                                  <div key={i} className="p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                                        <PlatformIcon platform={link.platform} className="w-4 h-4" useColor={true} />
-                                      </div>
-                                      <div>
-                                        <p className="text-sm font-bold text-aura-text">{link.title}</p>
-                                        <p className="text-[10px] text-aura-text-secondary uppercase tracking-widest">{link.platform}</p>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-sm font-bold text-aura-text">{link.clickCount} <span className="text-[10px] text-aura-text-secondary font-normal ml-1 uppercase">Clicks</span></p>
-                                      <div className="w-24 h-1 bg-white/5 rounded-full mt-1 overflow-hidden">
-                                        <div 
-                                          className="h-full bg-aura-cyan" 
-                                          style={{ width: `${analyticsData.totalClicks > 0 ? (link.clickCount / analyticsData.totalClicks) * 100 : 0}%` }} 
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {activeTab === 'settings' && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
-                      <div className="glass-card p-8 border-aura-glass-border">
-                        <h3 className="font-display font-bold text-xl text-aura-text mb-6">Manage Subscription</h3>
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-2xl ${isFree ? 'bg-white/5' : 'bg-aura-violet/20'} flex items-center justify-center`}>{isFree ? <LucideSparkles className="w-7 h-7 text-aura-text-secondary" /> : <LucideZap className="w-7 h-7 text-aura-violet" />}</div>
-                            <div>
-                              <p className="text-xs font-bold text-aura-text-secondary uppercase tracking-widest">Current Plan</p>
-                              <h4 className="text-xl font-display font-bold text-aura-text capitalize">{userData?.subscription?.plan || 'Free'}</h4>
-                              {!isFree && userData?.subscription?.status === 'active' && <p className="text-xs text-aura-mint font-medium mt-1">Renews on {new Date(userData.subscription.expiresAt).toLocaleDateString()}</p>}
-                              {userData?.subscription?.status === 'cancelled' && <p className="text-xs text-aura-pink font-medium mt-1">Ends on {new Date(userData.subscription.expiresAt).toLocaleDateString()}</p>}
-                            </div>
-                          </div>
-                          {isFree ? <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-sm font-bold">Upgrade Plan</button> : userData?.subscription?.status === 'active' ? <button onClick={handleCancelSubscription} disabled={isCancelling} className="px-6 py-3 rounded-xl border border-red-500/30 text-red-500 text-sm font-bold hover:bg-red-500/10 transition-all disabled:opacity-50">{isCancelling ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : 'Cancel Subscription'}</button> : <button onClick={() => window.location.href='/#pricing'} className="btn-primary py-3 px-8 text-sm font-bold">Resubscribe</button>}
-                        </div>
-                        <div className="mt-8 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                          <div>
-                            <h4 className="text-sm font-bold text-aura-text mb-4 uppercase tracking-widest">Account Security</h4>
-                            <button onClick={() => setShowPasswordModal(true)} className="flex items-center gap-2 text-aura-text-secondary hover:text-white transition-colors text-sm font-medium"><LucideShield className="w-4 h-4" /> Change Password</button>
-                          </div>
-                          <div className="h-12 w-px bg-white/5 hidden sm:block" />
-                          <div>
-                            <h4 className="text-sm font-bold text-aura-text mb-4 uppercase tracking-widest">Feedback</h4>
-                            <button onClick={() => setShowReviewModal(true)} className="flex items-center gap-2 text-aura-violet hover:text-aura-cyan transition-colors text-sm font-bold"><LucideSparkles className="w-4 h-4" /> Leave a Review</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="lg:col-span-5 flex flex-col items-center">
-                  <div className="sticky top-24 w-full max-w-[300px]">
-                    <p className="text-xs font-bold text-aura-text-secondary uppercase tracking-[0.2em] text-center mb-6">Live Preview</p>
-                    <div className="relative w-full aspect-[9/19] rounded-[48px] bg-aura-navy p-3 border-[8px] border-aura-text/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden">
-                      <div className="w-full h-full rounded-[36px] overflow-hidden relative flex flex-col" style={{ background: auraTree?.theme?.background || 'linear-gradient(135deg, #070913 0%, #0B1025 50%, #070913 100%)' }}>
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-7 bg-aura-navy/40 backdrop-blur-md rounded-b-3xl z-10" />
-                        <div className="flex-1 flex flex-col items-center pt-14 px-6 overflow-y-auto no-scrollbar relative z-10">
-                          <div className="w-20 h-20 rounded-full p-0.5 mb-4 shadow-xl relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${auraTree?.theme?.accentColor || '#7B61FF'}, #00D9FF)` }}>
-                            <div className="w-full h-full rounded-full bg-aura-navy flex items-center justify-center font-display font-bold text-2xl text-aura-text overflow-hidden">{auraTree?.avatarUrl ? <img src={auraTree.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : (auraTree?.displayName || userData?.displayName || 'U').charAt(0).toUpperCase()}</div>
-                          </div>
-                          <h3 className={`font-display font-bold text-lg text-center leading-tight ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-900' : 'text-aura-text'}`}>{auraTree?.displayName || userData?.displayName || '@username'}</h3>
-                          <p className={`text-[10px] text-center mt-2 max-w-[180px] line-clamp-3 ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-600' : 'text-aura-text-secondary'}`}>{auraTree?.bio || 'Add a bio to tell your audience who you are.'}</p>
-                          <div className="w-full mt-8 space-y-3">
-                            {links.map((link) => (
-                              <div key={link.id} className={`w-full p-3 flex items-center gap-3 shadow-lg backdrop-blur-md transition-transform active:scale-95 group ${auraTree?.theme?.cardStyle || 'rounded-2xl'} ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'bg-white/40 border-slate-200' : 'bg-white/[0.05] border-white/5'}`}>
-                                <div className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${auraTree?.theme?.cardStyle === 'rounded-full' ? 'rounded-full' : auraTree?.theme?.cardStyle === 'rounded-none' ? 'rounded-none' : 'rounded-lg'} bg-white/5`} style={{ color: getPlatformDetails(link.platform).color }}><PlatformIcon platform={link.platform} className="w-4 h-4" useColor={true} /></div>
-                                <span className={`text-[11px] font-bold truncate flex-1 text-center pr-8 ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-800' : 'text-aura-text'}`}>{link.title}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="h-14 flex flex-col items-center justify-center flex-shrink-0 opacity-40">
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
-                              <img src="/aura%20tree%20logo.png" className="w-full h-full object-contain scale-[3.2]" style={{ filter: THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'none' : 'invert(1)' }} alt="" />
-                            </div>
-                            <span className={`text-[8px] font-bold uppercase tracking-widest ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-900' : 'text-white'}`}>Aura Tree</span>
-                          </div>
-                          <div className={`w-16 h-1 rounded-full ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'bg-slate-300' : 'bg-white/10'}`} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
+      {/* Modals remain the same... */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-aura-navy/90 backdrop-blur-xl" onClick={() => setShowPasswordModal(false)} />

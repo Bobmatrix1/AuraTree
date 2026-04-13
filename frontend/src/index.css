@@ -94,11 +94,7 @@
   html {
     /* Prevent jitter on mobile */
     -webkit-overflow-scrolling: touch;
-  }
-
-  /* GPU acceleration for common animations */
-  .animate-float, .animate-float-slow, .animate-pulse-glow, .starfield {
-    transform: translateZ(0);
+    scroll-behavior: smooth;
   }
 
   /* Target only color-based properties for smooth but fast switching */
@@ -106,28 +102,27 @@
     color-scheme: dark;
   }
 
+  /* 
+     THE ULTIMATE HEADER FIX 
+     Targeting by class so it doesn't break the Dashboard bottom nav.
+  */
+  .site-navigation {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999999 !important;
+    transform: translateZ(9999px);
+    backface-visibility: hidden;
+    pointer-events: auto !important;
+  }
+
   body {
     @apply bg-aura-navy text-aura-text antialiased;
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
-    /* Ultra fast snap for theme switching */
-    transition: background-color 0.1s ease-out, color 0.1s ease-out;
   }
 
-  /* Smooth but snappy transition for specific UI elements */
-  .glass-card, 
-  .glass-card-sm, 
-  .btn-primary, 
-  .btn-secondary,
-  h1, h2, h3, p, span, a, button, i, svg {
-    transition: background-color 0.1s ease-out, border-color 0.1s ease-out, color 0.1s ease-out, box-shadow 0.1s ease-out, opacity 0.1s ease-out;
-  }
-
-  /* Prevent transition lag on initial load and forced theme changes */
-  [data-theme-switching="true"] * {
-    transition: none !important;
-  }
-  
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
     letter-spacing: -0.02em;
@@ -170,20 +165,9 @@
     box-shadow: 0 0 20px rgba(123, 97, 255, 0.5), 0 0 40px rgba(123, 97, 255, 0.2);
   }
   
-  /* Glow Effects */
-  .glow-violet {
-    box-shadow: 
-      0 0 60px var(--aura-glow),
-      0 0 120px rgba(123, 97, 255, 0.1);
-  }
-  
   /* Gradient Backgrounds */
   .bg-aura-gradient {
     background: linear-gradient(135deg, var(--aura-navy) 0%, var(--aura-navy-light) 50%, var(--aura-navy) 100%);
-  }
-  
-  .bg-cosmic-gradient {
-    background: linear-gradient(180deg, var(--aura-navy) 0%, var(--aura-navy-light) 50%, var(--aura-navy) 100%);
   }
   
   /* Text Gradient */
@@ -322,30 +306,6 @@
   
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(123, 97, 255, 0.5);
-  }
-
-  /* Legal Content Styling */
-  .legal-content {
-    color: var(--aura-text-secondary);
-  }
-
-  .legal-content h1, 
-  .legal-content h2 {
-    color: var(--aura-text) !important;
-  }
-
-  .legal-content ul li {
-    color: var(--aura-text-secondary);
-  }
-
-  .legal-content strong {
-    color: var(--aura-text);
-  }
-
-  .light .legal-content .glass-card {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(0, 0, 0, 0.05);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
   }
 }
 
