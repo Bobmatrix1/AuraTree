@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   SiYoutube, SiInstagram, SiTiktok, SiX, SiSpotify, 
-  SiApplemusic, SiSoundcloud, SiTwitch, SiGithub, 
+  SiApplemusic, SiYoutubemusic, SiVimeo, SiSoundcloud, SiTwitch, SiGithub, 
+  SiTidal, SiNetflix,
   SiFacebook, SiWhatsapp, SiTelegram, SiDiscord, SiSnapchat, 
   SiPinterest, SiReddit, SiMedium, SiSubstack, SiPatreon, 
   SiBuymeacoffee, SiPaypal, SiVenmo, SiCashapp, SiOnlyfans, 
@@ -16,20 +17,26 @@ import {
   SiVsco, SiZoom, SiCanva, SiBento
 } from 'react-icons/si';
 import { FaSkype, FaLinkedin, FaAmazon } from 'react-icons/fa6';
-import { Link as LucideLinkIcon, Loader2 } from 'lucide-react';
+import { Link as LucideLinkIcon, Loader2, Globe as LucideGlobe } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { API_V1_URL } from '../config/api';
 
 const getPlatformDetails = (platform: string) => {
   const details: { [key: string]: { icon: any, color: string } } = {
     youtube: { icon: SiYoutube, color: '#FF0000' },
+    youtubemusic: { icon: SiYoutubemusic, color: '#FF0000' },
     instagram: { icon: SiInstagram, color: '#E4405F' },
     tiktok: { icon: SiTiktok, color: '#000000' },
     twitter: { icon: SiX, color: '#000000' },
     x: { icon: SiX, color: '#000000' },
     threads: { icon: SiThreads, color: '#000000' },
     spotify: { icon: SiSpotify, color: '#1DB954' },
-    appleMusic: { icon: SiApplemusic, color: '#FA243C' },
+    applemusic: { icon: SiApplemusic, color: '#FA243C' },
+    tidal: { icon: SiTidal, color: '#000000' },
+    netflix: { icon: SiNetflix, color: '#E50914' },
+    audiomack: { icon: LucideGlobe, color: '#FFA200' },
+    deezer: { icon: LucideGlobe, color: '#A238FF' },
+    vimeo: { icon: SiVimeo, color: '#1AB7EA' },
     soundcloud: { icon: SiSoundcloud, color: '#FF5500' },
     twitch: { icon: SiTwitch, color: '#9146FF' },
     github: { icon: SiGithub, color: '#181717' },
@@ -62,6 +69,7 @@ const getPlatformDetails = (platform: string) => {
     canva: { icon: SiCanva, color: '#00C4CC' },
     bento: { icon: SiBento, color: '#FF0000' },
     skype: { icon: FaSkype, color: '#00AFF0' },
+    website: { icon: LucideGlobe, color: '#7B61FF' },
   };
 
   const platformLower = platform.toLowerCase();

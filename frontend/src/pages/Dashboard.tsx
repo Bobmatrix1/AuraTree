@@ -38,7 +38,8 @@ import {
 } from 'lucide-react';
 import { 
   SiYoutube, SiInstagram, SiTiktok, SiX, SiSpotify, 
-  SiApplemusic, SiSoundcloud, SiTwitch, SiGithub, 
+  SiApplemusic, SiYoutubemusic, SiVimeo, SiSoundcloud, SiTwitch, SiGithub, 
+  SiTidal, SiNetflix,
   SiFacebook, SiWhatsapp, SiTelegram, SiDiscord, SiSnapchat, 
   SiPinterest, SiReddit, SiMedium, SiSubstack, SiPatreon, 
   SiBuymeacoffee, SiPaypal, SiVenmo, SiCashapp, SiOnlyfans, 
@@ -66,13 +67,19 @@ import { API_BASE_URL, API_V1_URL } from '../config/api';
 const getPlatformDetails = (platform: string) => {
   const details: { [key: string]: { icon: any, color: string } } = {
     youtube: { icon: SiYoutube, color: '#FF0000' },
+    youtubemusic: { icon: SiYoutubemusic, color: '#FF0000' },
     instagram: { icon: SiInstagram, color: '#E4405F' },
     tiktok: { icon: SiTiktok, color: '#000000' },
     twitter: { icon: SiX, color: '#000000' },
     x: { icon: SiX, color: '#000000' },
     threads: { icon: SiThreads, color: '#000000' },
     spotify: { icon: SiSpotify, color: '#1DB954' },
-    appleMusic: { icon: SiApplemusic, color: '#FA243C' },
+    applemusic: { icon: SiApplemusic, color: '#FA243C' },
+    tidal: { icon: SiTidal, color: '#000000' },
+    netflix: { icon: SiNetflix, color: '#E50914' },
+    audiomack: { icon: LucideGlobe, color: '#FFA200' },
+    deezer: { icon: LucideGlobe, color: '#A238FF' },
+    vimeo: { icon: SiVimeo, color: '#1AB7EA' },
     soundcloud: { icon: SiSoundcloud, color: '#FF5500' },
     twitch: { icon: SiTwitch, color: '#9146FF' },
     github: { icon: SiGithub, color: '#181717' },
@@ -105,6 +112,7 @@ const getPlatformDetails = (platform: string) => {
     canva: { icon: SiCanva, color: '#00C4CC' },
     bento: { icon: SiBento, color: '#FF0000' },
     skype: { icon: FaSkype, color: '#00AFF0' },
+    website: { icon: LucideGlobe, color: '#7B61FF' },
   };
 
   const platformLower = platform.toLowerCase();
@@ -916,10 +924,22 @@ const Dashboard = () => {
     }
 
     const tempId = `temp-${Date.now()}`;
-    const detectedPlatform = url.includes('youtube') ? 'youtube' : 
-                            url.includes('instagram') ? 'instagram' : 
-                            url.includes('tiktok') ? 'tiktok' : 
-                            url.includes('spotify') ? 'spotify' : 'website';
+    const urlLower = url.toLowerCase();
+    const detectedPlatform = 
+      urlLower.includes('music.youtube.com') ? 'youtubemusic' :
+      urlLower.includes('youtube.com') || urlLower.includes('youtu.be') ? 'youtube' : 
+      urlLower.includes('instagram.com') ? 'instagram' : 
+      urlLower.includes('tiktok.com') ? 'tiktok' : 
+      urlLower.includes('spotify.com') ? 'spotify' : 
+      urlLower.includes('music.apple.com') ? 'applemusic' :
+      urlLower.includes('audiomack.com') ? 'audiomack' :
+      urlLower.includes('deezer.com') ? 'deezer' :
+      urlLower.includes('vimeo.com') ? 'vimeo' :
+      urlLower.includes('tidal.com') ? 'tidal' :
+      urlLower.includes('netflix.com') ? 'netflix' :
+      urlLower.includes('whatsapp.com') || urlLower.includes('wa.me') ? 'whatsapp' :
+      urlLower.includes('t.me') || urlLower.includes('telegram') ? 'telegram' :
+      'website';
     
     const optimisticLink = {
       id: tempId,
@@ -1811,7 +1831,20 @@ const Dashboard = () => {
           <div className="absolute inset-0 bg-aura-navy/90 backdrop-blur-xl" onClick={() => setShowAddModal(false)} />
           <div className="relative w-full max-w-md glass-card p-8 shadow-[0_0_50px_rgba(123,97,255,0.2)] animate-in zoom-in duration-300" data-lenis-prevent>
             <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 p-2 text-aura-text-secondary hover:text-aura-text"><LucideX className="w-6 h-6" /></button>
-            <div className="flex flex-col items-center mb-8"><div className="w-12 h-12 rounded-2xl bg-aura-violet/20 flex items-center justify-center mb-4">{newLinkUrl ? <PlatformIcon platform={newLinkUrl.includes('youtube') ? 'youtube' : newLinkUrl.includes('instagram') ? 'instagram' : newLinkUrl.includes('tiktok') ? 'tiktok' : newLinkUrl.includes('spotify') ? 'spotify' : 'website'} className="w-6 h-6 animate-in zoom-in" useColor={true} /> : <LucideLinkIcon className="w-6 h-6 text-aura-violet" />}</div><h2 className="font-display font-bold text-2xl text-aura-text">Add a new link</h2><p className="text-aura-text-secondary text-sm text-center mt-2">Paste your URL and we'll handle the rest.</p></div>
+            <div className="flex flex-col items-center mb-8"><div className="w-12 h-12 rounded-2xl bg-aura-violet/20 flex items-center justify-center mb-4">{newLinkUrl ? <PlatformIcon platform={
+                newLinkUrl.toLowerCase().includes('music.youtube.com') ? 'youtubemusic' :
+                newLinkUrl.toLowerCase().includes('youtube.com') || newLinkUrl.toLowerCase().includes('youtu.be') ? 'youtube' : 
+                newLinkUrl.toLowerCase().includes('instagram.com') ? 'instagram' : 
+                newLinkUrl.toLowerCase().includes('tiktok.com') ? 'tiktok' : 
+                newLinkUrl.toLowerCase().includes('spotify.com') ? 'spotify' : 
+                newLinkUrl.toLowerCase().includes('music.apple.com') ? 'applemusic' :
+                newLinkUrl.toLowerCase().includes('audiomack.com') ? 'audiomack' :
+                newLinkUrl.toLowerCase().includes('deezer.com') ? 'deezer' :
+                newLinkUrl.toLowerCase().includes('vimeo.com') ? 'vimeo' :
+                newLinkUrl.toLowerCase().includes('whatsapp.com') || newLinkUrl.toLowerCase().includes('wa.me') ? 'whatsapp' :
+                newLinkUrl.toLowerCase().includes('t.me') || newLinkUrl.toLowerCase().includes('telegram') ? 'telegram' :
+                'website'
+              } className="w-6 h-6 animate-in zoom-in" useColor={true} /> : <LucideLinkIcon className="w-6 h-6 text-aura-violet" />}</div><h2 className="font-display font-bold text-2xl text-aura-text">Add a new link</h2><p className="text-aura-text-secondary text-sm text-center mt-2">Paste your URL and we'll handle the rest.</p></div>
             <form onSubmit={handleAddLink} className="space-y-6">
               <div className="space-y-2"><input type="text" autoFocus required placeholder="e.g. youtube.com/aura" value={newLinkUrl} onChange={(e) => setNewLinkUrl(e.target.value)} className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all font-medium" /></div>
               <button type="submit" disabled={!newLinkUrl} className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-2xl shadow-aura-violet/30">Add to Profile <LucideArrowLeft className="w-5 h-5 rotate-180" /></button>

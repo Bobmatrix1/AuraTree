@@ -21,14 +21,15 @@ const PLATFORM_PATTERNS: { [key: string]: PlatformInfo } = {
   x: { name: 'x', icon: 'twitter', label: 'X', color: '#000000', domain: 'x.com' },
   facebook: { name: 'facebook', icon: 'facebook', label: 'Facebook', color: '#1877F2', domain: 'facebook.com' },
   threads: { name: 'threads', icon: 'at-sign', label: 'Threads', color: '#000000', domain: 'threads.net' },
-  whatsapp: { name: 'whatsapp', icon: 'message-circle', label: 'WhatsApp', color: '#25D366', domain: 'wa.me' },
-  telegram: { name: 'telegram', icon: 'send', label: 'Telegram', color: '#26A5E4', domain: 't.me' },
+  whatsapp: { name: 'whatsapp', icon: 'message-circle', label: 'WhatsApp', color: '#25D366', domain: 'whatsapp.com' },
+  telegram: { name: 'telegram', icon: 'send', label: 'Telegram', color: '#26A5E4', domain: 'telegram.org' },
   discord: { name: 'discord', icon: 'message-square', label: 'Discord', color: '#5865F2', domain: 'discord.com' },
   snapchat: { name: 'snapchat', icon: 'ghost', label: 'Snapchat', color: '#FFFC00', domain: 'snapchat.com' },
   linkedin: { name: 'linkedin', icon: 'linkedin', label: 'LinkedIn', color: '#0A66C2', domain: 'linkedin.com' },
   pinterest: { name: 'pinterest', icon: 'pin', label: 'Pinterest', color: '#BD081C', domain: 'pinterest.com' },
   reddit: { name: 'reddit', icon: 'message-circle', label: 'Reddit', color: '#FF4500', domain: 'reddit.com' },
   twitch: { name: 'twitch', icon: 'twitch', label: 'Twitch', color: '#9146FF', domain: 'twitch.tv' },
+  vimeo: { name: 'vimeo', icon: 'video', label: 'Vimeo', color: '#1AB7EA', domain: 'vimeo.com' },
   mastodon: { name: 'mastodon', icon: 'at-sign', label: 'Mastodon', color: '#6364FF', domain: 'mastodon.social' },
   bluesky: { name: 'bluesky', icon: 'cloud', label: 'Bluesky', color: '#0085FF', domain: 'bsky.app' },
   tumblr: { name: 'tumblr', icon: 'type', label: 'Tumblr', color: '#36465D', domain: 'tumblr.com' },
@@ -38,14 +39,21 @@ const PLATFORM_PATTERNS: { [key: string]: PlatformInfo } = {
 
   // Music & Audio
   spotify: { name: 'spotify', icon: 'music', label: 'Spotify', color: '#1DB954', domain: 'spotify.com' },
+  youtubemusic: { name: 'youtubemusic', icon: 'music', label: 'YouTube Music', color: '#FF0000', domain: 'music.youtube.com' },
   appleMusic: { name: 'appleMusic', icon: 'music', label: 'Apple Music', color: '#FA243C', domain: 'music.apple.com' },
-  soundcloud: { name: 'soundcloud', icon: 'cloud', label: 'SoundCloud', color: '#FF5500', domain: 'soundcloud.com' },
   tidal: { name: 'tidal', icon: 'music', label: 'Tidal', color: '#000000', domain: 'tidal.com' },
+  soundcloud: { name: 'soundcloud', icon: 'cloud', label: 'SoundCloud', color: '#FF5500', domain: 'soundcloud.com' },
   deezer: { name: 'deezer', icon: 'music', label: 'Deezer', color: '#A238FF', domain: 'deezer.com' },
   bandcamp: { name: 'bandcamp', icon: 'disc', label: 'Bandcamp', color: '#629AA9', domain: 'bandcamp.com' },
   mixcloud: { name: 'mixcloud', icon: 'cloud', label: 'Mixcloud', color: '#52AAD8', domain: 'mixcloud.com' },
   audiomack: { name: 'audiomack', icon: 'music', label: 'Audiomack', color: '#FFA200', domain: 'audiomack.com' },
   pandora: { name: 'pandora', icon: 'music', label: 'Pandora', color: '#00A0EE', domain: 'pandora.com' },
+
+  // Video & Entertainment
+  youtube_video: { name: 'youtube', icon: 'youtube', label: 'YouTube', color: '#FF0000', domain: 'youtube.com' },
+  netflix: { name: 'netflix', icon: 'video', label: 'Netflix', color: '#E50914', domain: 'netflix.com' },
+  vimeo_video: { name: 'vimeo', icon: 'video', label: 'Vimeo', color: '#1AB7EA', domain: 'vimeo.com' },
+  twitch_video: { name: 'twitch', icon: 'twitch', label: 'Twitch', color: '#9146FF', domain: 'twitch.tv' },
 
   // Developer & Professional
   github: { name: 'github', icon: 'github', label: 'GitHub', color: '#181717', domain: 'github.com' },
@@ -137,6 +145,8 @@ export const detectPlatform = (url: string): PlatformInfo => {
     if (hostname === 't.co') return PLATFORM_PATTERNS.twitter;
     if (hostname === 'fb.me') return PLATFORM_PATTERNS.facebook;
     if (hostname === 'instagr.am') return PLATFORM_PATTERNS.instagram;
+    if (hostname === 'wa.me' || hostname === 'whatsapp.com') return PLATFORM_PATTERNS.whatsapp;
+    if (hostname === 't.me' || hostname === 'telegram.me' || hostname === 'telegram.org') return PLATFORM_PATTERNS.telegram;
     if (hostname === 'msng.link') return PLATFORM_PATTERNS.messenger || PLATFORM_PATTERNS.facebook;
 
     // Default to website
