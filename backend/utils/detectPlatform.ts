@@ -13,33 +13,9 @@ export interface PlatformInfo {
 
 // Platform detection patterns (100+ supported)
 const PLATFORM_PATTERNS: { [key: string]: PlatformInfo } = {
-  // Social & Messaging
-  youtube: { name: 'youtube', icon: 'youtube', label: 'YouTube', color: '#FF0000', domain: 'youtube.com' },
-  instagram: { name: 'instagram', icon: 'instagram', label: 'Instagram', color: '#E4405F', domain: 'instagram.com' },
-  tiktok: { name: 'tiktok', icon: 'music-2', label: 'TikTok', color: '#000000', domain: 'tiktok.com' },
-  twitter: { name: 'twitter', icon: 'twitter', label: 'X (Twitter)', color: '#000000', domain: 'twitter.com' },
-  x: { name: 'x', icon: 'twitter', label: 'X', color: '#000000', domain: 'x.com' },
-  facebook: { name: 'facebook', icon: 'facebook', label: 'Facebook', color: '#1877F2', domain: 'facebook.com' },
-  threads: { name: 'threads', icon: 'at-sign', label: 'Threads', color: '#000000', domain: 'threads.net' },
-  whatsapp: { name: 'whatsapp', icon: 'message-circle', label: 'WhatsApp', color: '#25D366', domain: 'whatsapp.com' },
-  telegram: { name: 'telegram', icon: 'send', label: 'Telegram', color: '#26A5E4', domain: 'telegram.org' },
-  discord: { name: 'discord', icon: 'message-square', label: 'Discord', color: '#5865F2', domain: 'discord.com' },
-  snapchat: { name: 'snapchat', icon: 'ghost', label: 'Snapchat', color: '#FFFC00', domain: 'snapchat.com' },
-  linkedin: { name: 'linkedin', icon: 'linkedin', label: 'LinkedIn', color: '#0A66C2', domain: 'linkedin.com' },
-  pinterest: { name: 'pinterest', icon: 'pin', label: 'Pinterest', color: '#BD081C', domain: 'pinterest.com' },
-  reddit: { name: 'reddit', icon: 'message-circle', label: 'Reddit', color: '#FF4500', domain: 'reddit.com' },
-  twitch: { name: 'twitch', icon: 'twitch', label: 'Twitch', color: '#9146FF', domain: 'twitch.tv' },
-  vimeo: { name: 'vimeo', icon: 'video', label: 'Vimeo', color: '#1AB7EA', domain: 'vimeo.com' },
-  mastodon: { name: 'mastodon', icon: 'at-sign', label: 'Mastodon', color: '#6364FF', domain: 'mastodon.social' },
-  bluesky: { name: 'bluesky', icon: 'cloud', label: 'Bluesky', color: '#0085FF', domain: 'bsky.app' },
-  tumblr: { name: 'tumblr', icon: 'type', label: 'Tumblr', color: '#36465D', domain: 'tumblr.com' },
-  vk: { name: 'vk', icon: 'share-2', label: 'VK', color: '#4C75A3', domain: 'vk.com' },
-  line: { name: 'line', icon: 'message-circle', label: 'LINE', color: '#00C300', domain: 'line.me' },
-  wechat: { name: 'wechat', icon: 'message-square', label: 'WeChat', color: '#07C160', domain: 'wechat.com' },
-
   // Music & Audio
-  spotify: { name: 'spotify', icon: 'music', label: 'Spotify', color: '#1DB954', domain: 'spotify.com' },
   youtubemusic: { name: 'youtubemusic', icon: 'music', label: 'YouTube Music', color: '#FF0000', domain: 'music.youtube.com' },
+  spotify: { name: 'spotify', icon: 'music', label: 'Spotify', color: '#1DB954', domain: 'spotify.com' },
   appleMusic: { name: 'appleMusic', icon: 'music', label: 'Apple Music', color: '#FA243C', domain: 'music.apple.com' },
   tidal: { name: 'tidal', icon: 'music', label: 'Tidal', color: '#000000', domain: 'tidal.com' },
   soundcloud: { name: 'soundcloud', icon: 'cloud', label: 'SoundCloud', color: '#FF5500', domain: 'soundcloud.com' },
@@ -49,11 +25,14 @@ const PLATFORM_PATTERNS: { [key: string]: PlatformInfo } = {
   audiomack: { name: 'audiomack', icon: 'music', label: 'Audiomack', color: '#FFA200', domain: 'audiomack.com' },
   pandora: { name: 'pandora', icon: 'music', label: 'Pandora', color: '#00A0EE', domain: 'pandora.com' },
 
+  // Social & Messaging
+  youtube: { name: 'youtube', icon: 'youtube', label: 'YouTube', color: '#FF0000', domain: 'youtube.com' },
+  instagram: { name: 'instagram', icon: 'instagram', label: 'Instagram', color: '#E4405F', domain: 'instagram.com' },
+
   // Video & Entertainment
-  youtube_video: { name: 'youtube', icon: 'youtube', label: 'YouTube', color: '#FF0000', domain: 'youtube.com' },
   netflix: { name: 'netflix', icon: 'video', label: 'Netflix', color: '#E50914', domain: 'netflix.com' },
-  vimeo_video: { name: 'vimeo', icon: 'video', label: 'Vimeo', color: '#1AB7EA', domain: 'vimeo.com' },
-  twitch_video: { name: 'twitch', icon: 'twitch', label: 'Twitch', color: '#9146FF', domain: 'twitch.tv' },
+  twitch: { name: 'twitch', icon: 'twitch', label: 'Twitch', color: '#9146FF', domain: 'twitch.tv' },
+  vimeo: { name: 'vimeo', icon: 'video', label: 'Vimeo', color: '#1AB7EA', domain: 'vimeo.com' },
 
   // Developer & Professional
   github: { name: 'github', icon: 'github', label: 'GitHub', color: '#181717', domain: 'github.com' },
@@ -171,46 +150,60 @@ export const detectPlatform = (url: string): PlatformInfo => {
 /**
  * Extract readable title from URL
  */
-export const extractTitleFromUrl = (url: string, platform: string): string => {
+export const extractTitleFromUrl = (url: string, platformName: string): string => {
+  const platform = PLATFORM_PATTERNS[platformName];
+  const defaultLabel = platform ? platform.label : 'Website';
+
   try {
     const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
     const pathParts = urlObj.pathname.split('/').filter(Boolean);
 
-    switch (platform) {
+    switch (platformName) {
       case 'youtube':
-        return 'YouTube Video';
+        return 'YouTube';
+      case 'youtubemusic':
+        return 'YouTube Music';
       case 'instagram':
-        return 'Instagram Profile';
+        return 'Instagram';
       case 'tiktok':
-        return 'TikTok Profile';
+        return 'TikTok';
       case 'twitter':
       case 'x':
-        return 'X Profile';
+        return 'X';
       case 'spotify':
-        return pathParts.includes('artist') 
-          ? 'Spotify Artist' 
-          : pathParts.includes('playlist')
-          ? 'Spotify Playlist'
-          : 'Spotify';
+        return 'Spotify';
+      case 'applemusic':
+      case 'appleMusic':
+        return 'Apple Music';
       case 'github':
-        return pathParts.length > 1 ? 'GitHub Repository' : 'GitHub Profile';
+        return 'GitHub';
       case 'linkedin':
-        return 'LinkedIn Profile';
+        return 'LinkedIn';
       case 'twitch':
-        return 'Twitch Channel';
+        return 'Twitch';
+      case 'vimeo':
+        return 'Vimeo';
+      case 'netflix':
+        return 'Netflix';
+      case 'tidal':
+        return 'Tidal';
+      case 'whatsapp':
+        return 'WhatsApp';
+      case 'telegram':
+        return 'Telegram';
       default:
-        // Try to create a readable title from the path
-        if (pathParts.length > 0) {
+        // Try to create a readable title from the path if it's a generic website
+        if (platformName === 'website' && pathParts.length > 0) {
           const lastPart = pathParts[pathParts.length - 1];
           // Remove hyphens and underscores, capitalize words
           return lastPart
             .replace(/[-_]/g, ' ')
             .replace(/\b\w/g, (l) => l.toUpperCase());
         }
-        return 'Link';
+        return defaultLabel;
     }
   } catch {
-    return 'Link';
+    return defaultLabel;
   }
 };
 

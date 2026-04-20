@@ -944,7 +944,8 @@ const Dashboard = () => {
     const optimisticLink = {
       id: tempId,
       url: url.startsWith('http') ? url : `https://${url}`,
-      title: 'Syncing...',
+      title: detectedPlatform === 'website' ? 'Website' : 
+             detectedPlatform.charAt(0).toUpperCase() + detectedPlatform.slice(1).replace('music', ' Music'),
       platform: detectedPlatform,
       isOptimistic: true
     };
@@ -1861,7 +1862,9 @@ const Dashboard = () => {
             <div className="flex flex-col items-center mb-8"><div className="w-12 h-12 rounded-2xl bg-aura-violet/20 flex items-center justify-center mb-4"><LucideSettings className="w-6 h-6 text-aura-violet" /></div><h2 className="font-display font-bold text-2xl text-aura-text">Edit link</h2></div>
             <form onSubmit={handleUpdateLink} className="space-y-6">
               <div className="space-y-4"><input type="text" required value={editingLink.title} onChange={(e) => setEditingLink({ ...editingLink, title: e.target.value })} className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all font-medium" /><input type="text" required value={editingLink.url} onChange={(e) => setEditingLink({ ...editingLink, url: e.target.value })} className="w-full px-4 py-4 rounded-2xl bg-white/5 border border-white/10 text-aura-text focus:outline-none focus:border-aura-violet/50 transition-all font-medium" /></div>
-              <button type="submit" className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3">Save Changes <LucideCheck className="w-5 h-5" /></button>
+              <button type="submit" disabled={isAddingLink} className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-2xl shadow-aura-violet/30 disabled:opacity-50">
+                {isAddingLink ? <LucideLoader2 className="w-6 h-6 animate-spin" /> : <><LucideCheck className="w-5 h-5" /> Save Changes</>}
+              </button>
             </form>
           </div>
         </div>
