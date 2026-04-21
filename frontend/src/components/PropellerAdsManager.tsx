@@ -38,9 +38,11 @@ const PropellerAdsManager = () => {
       return;
     }
 
-    // LAYER 3: Block for critical pages
-    const criticalPages = ['/checkout', '/admin', '/login', '/signup'];
-    if (criticalPages.some(page => location.pathname.startsWith(page))) {
+    // LAYER 3: Block for critical pages and Auth Modals
+    const criticalPages = ['/checkout', '/admin', '/login', '/signup', '/register'];
+    const isAuthModalOpen = document.body.style.overflow === 'hidden' && !!document.querySelector('.glass-card h2')?.textContent?.match(/Sign In|Create Account|Login|Signup|Reset Password/i);
+
+    if (criticalPages.some(page => location.pathname.startsWith(page)) || isAuthModalOpen) {
       nuclearRemoveAds();
       return;
     }

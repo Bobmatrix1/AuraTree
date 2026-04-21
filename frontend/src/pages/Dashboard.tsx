@@ -1257,9 +1257,10 @@ const Dashboard = () => {
                         {isFree ? 'Unlock premium glassmorphic themes, full branding control, and a 100% ad-free experience by upgrading to Pro.' : 'Remove the "aura-" prefix entirely and enjoy an ad-free workspace with the Teams plan.'}
                       </p>
                     </div>
-                    <button onClick={() => { window.location.href = '/#pricing'; }} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
-                      Upgrade Now
-                    </button>
+                    <button onClick={() => window.location.href = '/#pricing'} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
+                                           Upgrade Now
+                                         </button>
+
                   </div>
                   <div className="absolute top-0 right-0 w-64 h-64 bg-aura-violet/10 blur-[100px] -mr-32 -mt-32 rounded-full" />
                 </div>

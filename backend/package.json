@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only index.ts",
-    "build": "tsc && cp -r admin dist/ && cp -r public dist/",
+    "build": "tsc && node -e \"const fs=require('fs'); ['admin', 'public'].forEach(dir => { if(fs.existsSync(dir)) fs.cpSync(dir, 'dist/' + dir, {recursive: true, force: true}) })\"",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
     "seed": "ts-node scripts/seed.ts"
