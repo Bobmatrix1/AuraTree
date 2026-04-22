@@ -180,7 +180,12 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-aura-navy flex items-center justify-center p-4 relative overflow-hidden">
+    <div 
+      className="min-h-screen bg-aura-navy flex items-center justify-center p-4 relative overflow-hidden"
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       <Starfield />
       <div className="noise-overlay" />
       

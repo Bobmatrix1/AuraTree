@@ -168,6 +168,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }: AuthModalProps) 
       
       <div 
         className="relative w-full max-w-md glass-card p-6 sm:p-8 overflow-hidden animate-in fade-in zoom-in duration-300"
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         data-lenis-prevent
       >
         <button 

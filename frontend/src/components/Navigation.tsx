@@ -81,6 +81,12 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactCli
   };
 
   const scrollToSection = (id: string) => {
+    // If we're not on the home page, go there with the hash
+    if (window.location.pathname !== '/') {
+      window.location.href = `/#${id}`;
+      return;
+    }
+
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -188,12 +194,16 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactCli
                 <>
                   <button 
                     onClick={onLoginClick}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
                     className="text-sm text-aura-text hover:text-aura-violet transition-colors"
                   >
                     Sign In
                   </button>
                   <button 
                     onClick={onAuthClick}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
                     className="btn-primary text-sm py-2.5 px-5"
                   >
                     Create your page

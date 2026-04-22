@@ -4,7 +4,7 @@ import { auth, db } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
-const PropellerAdsManager = () => {
+const PropellerAdsManager = ({ isAuthOpen }: { isAuthOpen?: boolean }) => {
   const location = useLocation();
   const [userPlan, setUserPlan] = useState<string | null>(null);
   const [isPlanLoaded, setIsPlanLoaded] = useState(false);
@@ -28,27 +28,52 @@ const PropellerAdsManager = () => {
   }, []);
 
   useEffect(() => {
-    // LAYER 1: Absolute block until plan is verified
-    if (!isPlanLoaded) return;
+    const criticalPages = ['/checkout', '/admin', '/login', '/signup', '/register'];
+    const isModalVisuallyOpen = document.body.style.overflow === 'hidden' && !!document.querySelector('.glass-card h2')?.textContent?.match(/Sign In|Create Account|Login|Signup|Reset Password/i);
+    const isProtectedContext = criticalPages.some(page => location.pathname.startsWith(page)) || isAuthOpen || isModalVisuallyOpen;
 
-    // LAYER 2: Absolute block for Paid Users
-    if (userPlan && userPlan !== 'free') {
-      console.log('Premium user detected: Ads blocked permanently.');
+    // SHIELD: Intercept all network calls to ad domains in protected contexts
+    if (isProtectedContext) {
+      console.log('🛡️ Network Shield Active: Blocking Ad Domains');
+      
+      // Override Fetch
+      const originalFetch = window.fetch;
+      window.fetch = function(...args) {
+        const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
+        if (url.includes('6opo.com') || url.includes('quge5.com') || url.includes('5gvci.com') || url.includes('proproads')) {
+          return Promise.reject(new Error('Blocked by Aura Shield'));
+        }
+        return originalFetch.apply(this, args);
+      };
+
+      // Override XHR
+      const originalXHR = window.XMLHttpRequest.prototype.open;
+      window.XMLHttpRequest.prototype.open = function(...args: any[]) {
+        const url = args[1];
+        if (typeof url === 'string' && (url.includes('6opo.com') || url.includes('quge5.com') || url.includes('5gvci.com'))) {
+          console.warn('Blocked XHR to ad domain');
+          return; 
+        }
+        return originalXHR.apply(this, args as any);
+      };
+
       nuclearRemoveAds();
-      return;
+      
+      return () => {
+        window.fetch = originalFetch;
+        window.XMLHttpRequest.prototype.open = originalXHR;
+      };
     }
 
-    // LAYER 3: Block for critical pages and Auth Modals
-    const criticalPages = ['/checkout', '/admin', '/login', '/signup', '/register'];
-    const isAuthModalOpen = document.body.style.overflow === 'hidden' && !!document.querySelector('.glass-card h2')?.textContent?.match(/Sign In|Create Account|Login|Signup|Reset Password/i);
+    if (!isPlanLoaded) return;
 
-    if (criticalPages.some(page => location.pathname.startsWith(page)) || isAuthModalOpen) {
+    if (userPlan && userPlan !== 'free') {
       nuclearRemoveAds();
       return;
     }
 
     const LAST_AD_KEY = 'strict_ad_lockdown_ts';
-    const THROTTLE_MS = 3 * 60 * 1000; // 3 Minutes
+    const THROTTLE_MS = 3 * 60 * 1000;
 
     const checkLockdown = () => {
       const lastAd = localStorage.getItem(LAST_AD_KEY);
@@ -60,21 +85,25 @@ const PropellerAdsManager = () => {
       return false;
     };
 
-    const handleInteraction = () => {
+    const handleInteraction = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const isAuthClick = target.closest('a[href="/login"], a[href="/signup"], button.auth-trigger, .glass-card input, .glass-card button');
+      
+      if (isAuthClick || isAuthOpen || isProtectedContext) {
+        return;
+      }
+
       if (checkLockdown()) return;
 
-      // START LOCKDOWN: Mark current time as "Ad Fired"
       localStorage.setItem(LAST_AD_KEY, Date.now().toString());
-      console.log('Ad triggered. Entering 3-minute silence mode.');
       
-      // Give the ad 1 second to actually trigger its pop-under, then kill everything
       setTimeout(() => {
         nuclearRemoveAds();
       }, 1000);
     };
 
     function loadAdScript() {
-      if (checkLockdown()) return;
+      if (checkLockdown() || isProtectedContext) return;
       if (document.querySelector('script[data-zone="228814"]')) return;
       
       const script = document.createElement('script');
@@ -86,11 +115,12 @@ const PropellerAdsManager = () => {
     }
 
     function nuclearRemoveAds() {
-      // 1. Remove the main script
+      // 1. Remove scripts
       document.querySelectorAll('script[data-zone="228814"]').forEach(s => s.remove());
+      document.querySelectorAll('script[src*="quge5.com"], script[src*="5gvci.com"], script[src*="6opo.com"]').forEach(s => s.remove());
       
-      // 2. Clear all global Propeller objects to prevent background triggers
-      const pKeys = ['propeller', 'prophsh', 'pps', 'pp_ms', 'pp_s', 'pp_ns'];
+      // 2. Clear global objects
+      const pKeys = ['propeller', 'prophsh', 'pps', 'pp_ms', 'pp_s', 'pp_ns', 'p_v', 'p_r'];
       pKeys.forEach(key => {
         try {
           (window as any)[key] = undefined;
@@ -98,11 +128,11 @@ const PropellerAdsManager = () => {
         } catch (e) {}
       });
 
-      // 3. Remove any injected scripts from their CDN
-      document.querySelectorAll('script[src*="quge5.com"], script[src*="5gvci.com"]').forEach(s => s.remove());
-      
-      // 4. Force clear any existing click listeners by Propeller if possible
-      // (This is a fallback as we can't easily list all listeners)
+      // 3. Force stop any remaining timers
+      let id = window.setTimeout(() => {}, 0);
+      while (id--) {
+        window.clearTimeout(id);
+      }
     }
 
     loadAdScript();
@@ -113,7 +143,7 @@ const PropellerAdsManager = () => {
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('touchstart', handleInteraction);
     };
-  }, [location.pathname, userPlan, isPlanLoaded]);
+  }, [location.pathname, userPlan, isPlanLoaded, isAuthOpen]);
 
   return null;
 };

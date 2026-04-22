@@ -633,6 +633,14 @@ const Dashboard = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
+      
+      if (response.status === 403) {
+        console.warn('Forbidden access to saved page. Falling back.');
+        localStorage.removeItem('active_aura_page_id');
+        await fetchAuraTree();
+        return;
+      }
+
       if (data.success) {
         setAuraTree(data.data);
         setLinks(data.data.links || []);
@@ -1257,7 +1265,7 @@ const Dashboard = () => {
                         {isFree ? 'Unlock premium glassmorphic themes, full branding control, and a 100% ad-free experience by upgrading to Pro.' : 'Remove the "aura-" prefix entirely and enjoy an ad-free workspace with the Teams plan.'}
                       </p>
                     </div>
-                    <button onClick={() => window.location.href = '/#pricing'} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
+                    <button onClick={() => window.location.href = '/?action=upgrade'} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
                                            Upgrade Now
                                          </button>
 

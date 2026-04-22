@@ -76,6 +76,44 @@ function App() {
 
     requestAnimationFrame(raf);
 
+    // Handle cross-page actions (like Upgrade from Dashboard)
+    const handleNavigationActions = () => {
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get('action');
+      
+      if (action === 'upgrade' || window.location.hash === '#pricing') {
+        let attempts = 0;
+        const scrollInterval = setInterval(() => {
+          const element = document.getElementById('pricing');
+          if (element) {
+            clearInterval(scrollInterval);
+            setTimeout(() => {
+              lenis.scrollTo(element, { offset: -80, duration: 1.5 });
+              // Aggressively wipe the URL clean after starting scroll
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }, 300);
+          }
+          attempts++;
+          if (attempts > 50) clearInterval(scrollInterval);
+        }, 100);
+      }
+    };
+
+    handleNavigationActions();
+
+    // Global URL Cleaner: Runs on home load to ensure no messy hashes/params stay visible
+    if (window.location.pathname === '/') {
+      const cleanup = setTimeout(() => {
+        const hasHash = !!window.location.hash;
+        const hasSearch = !!window.location.search && !window.location.search.includes('tab');
+        
+        if (hasHash || hasSearch) {
+          window.history.replaceState({}, document.title, "/");
+        }
+      }, 3000); // Wait for potential actions to finish
+      return () => clearTimeout(cleanup);
+    }
+
     return () => {
       unsubscribe();
       lenis.destroy();
@@ -88,7 +126,7 @@ function App() {
     <HelmetProvider>
       <Router>
         <Starfield />
-        <PropellerAdsManager />
+        <PropellerAdsManager isAuthOpen={isAuthOpen} />
         <PWAInstallPrompt />
         <Routes>
           <Route path="/" element={
