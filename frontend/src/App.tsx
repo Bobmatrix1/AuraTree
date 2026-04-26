@@ -6,7 +6,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { auth } from './config/firebase';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from '@/components/ui/sonner';
 import { 
@@ -51,13 +51,17 @@ import CareersPage from './pages/CareersPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 
-function App() {
+// Separate content component to use hooks like useLocation
+const AppContent = () => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCompare, setShowCompare] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
     // Presence check
@@ -68,51 +72,13 @@ function App() {
 
     // Smooth Scroll Initialization
     const lenis = new Lenis();
+    lenisRef.current = lenis;
 
     function raf(time: number) {
       lenis.raf(time);
       requestAnimationFrame(raf);
     }
-
     requestAnimationFrame(raf);
-
-    // Handle cross-page actions (like Upgrade from Dashboard)
-    const handleNavigationActions = () => {
-      const params = new URLSearchParams(window.location.search);
-      const action = params.get('action');
-      
-      if (action === 'upgrade' || window.location.hash === '#pricing') {
-        let attempts = 0;
-        const scrollInterval = setInterval(() => {
-          const element = document.getElementById('pricing');
-          if (element) {
-            clearInterval(scrollInterval);
-            setTimeout(() => {
-              lenis.scrollTo(element, { offset: -80, duration: 1.5 });
-              // Aggressively wipe the URL clean after starting scroll
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }, 300);
-          }
-          attempts++;
-          if (attempts > 50) clearInterval(scrollInterval);
-        }, 100);
-      }
-    };
-
-    handleNavigationActions();
-
-    // Global URL Cleaner: Runs on home load to ensure no messy hashes/params stay visible
-    if (window.location.pathname === '/') {
-      const cleanup = setTimeout(() => {
-        const hasHash = !!window.location.hash;
-        const hasSearch = !!window.location.search && !window.location.search.includes('tab');
-        
-        if (hasHash || hasSearch) {
-          window.history.replaceState({}, document.title, "/");
-        }
-      }, 3000); // Wait for potential actions to finish
-      return () => clearTimeout(cleanup);
-    }
 
     return () => {
       unsubscribe();
@@ -120,137 +86,198 @@ function App() {
     };
   }, []);
 
+  // MASTER NAVIGATION HANDLER - Runs on every route change
+  useEffect(() => {
+    // Scroll to top on every route change (unless it's a specific hash scroll)
+    if (!window.location.hash) {
+      window.scrollTo(0, 0);
+    }
+
+    const scrollSignal = sessionStorage.getItem('scroll_to_pricing');
+    const hasPricingHash = window.location.hash === '#pricing';
+
+    if (location.pathname === '/' && (scrollSignal === 'true' || hasPricingHash)) {
+      // 1. CLEAN UP URL IMMEDIATELY
+      sessionStorage.removeItem('scroll_to_pricing');
+      if (window.location.hash || window.location.search) {
+        window.history.replaceState({}, document.title, "/");
+      }
+
+      // 2. WAIT FOR DOM & SCROLL
+      let attempts = 0;
+      const findAndScroll = setInterval(() => {
+        const target = document.getElementById('pricing');
+        if (target && lenisRef.current) {
+          clearInterval(findAndScroll);
+          setTimeout(() => {
+            lenisRef.current?.scrollTo(target, { 
+              offset: -80, 
+              duration: 2,
+              easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+            });
+          }, 400);
+        }
+        attempts++;
+        if (attempts > 50) clearInterval(findAndScroll);
+      }, 100);
+    } else if (location.pathname === '/') {
+       // Regular home refresh cleanup
+       const search = window.location.search;
+       if (search && !search.includes('tab') && !search.includes('code')) {
+         window.history.replaceState({}, document.title, "/");
+       }
+    }
+  }, [location.pathname]);
+
   if (loading) return null;
 
   return (
-    <HelmetProvider>
-      <Router>
-        <Starfield />
-        <PropellerAdsManager isAuthOpen={isAuthOpen} />
-        <PWAInstallPrompt />
-        <Routes>
-          <Route path="/" element={
-            <main className="relative z-10 overflow-x-hidden">
-              <Navigation 
-                user={user} 
-                onAuthClick={() => setIsAuthOpen(true)} 
-                onDemoClick={() => setIsDemoOpen(true)} 
-                onLoginClick={() => setIsAuthOpen(true)}
-                onContactClick={() => setIsContactOpen(true)}
-              />
-              <HeroSection user={user} onAuthClick={() => setIsAuthOpen(true)} onDemoClick={() => setIsDemoOpen(true)} />
-              <FeaturesOrbit />
-              <FeatureThemes />
-              <EditorPreview onAuthClick={() => setIsAuthOpen(true)} />
-              <FeatureAnalytics />
-              <FeatureQR user={user} />
-              <Pricing user={user} onPlanClick={() => setIsAuthOpen(true)} />
-              <SocialProof />
-              <FAQ />
-              <FinalCTA user={user} onAuthClick={() => setIsAuthOpen(true)} onCompareClick={() => setShowCompare(true)} />
-              <Footer onContactOpenChange={() => setIsContactOpen(true)} />
-            </main>
-          } />
-          <Route path="/login" element={<AuthPage />} />
-          <Route path="/signup" element={<AuthPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/about" element={<AboutPage onContactClick={() => setIsContactOpen(true)} />} />
-          <Route path="/blog" element={<BlogPage onContactClick={() => setIsContactOpen(true)} />} />
-          <Route path="/careers" element={<CareersPage onContactClick={() => setIsContactOpen(true)} />} />
-          <Route path="/privacy" element={<PrivacyPage onContactClick={() => setIsContactOpen(true)} />} />
-          <Route path="/terms" element={<TermsPage onContactClick={() => setIsContactOpen(true)} />} />
-          <Route path="/:slug" element={<ProfilePage />} />
-        </Routes>
+    <>
+      <Starfield />
+      <PropellerAdsManager isAuthOpen={isAuthOpen} />
+      <PWAInstallPrompt />
+      <Routes>
+        <Route path="/" element={
+          <main className="relative z-10 overflow-x-hidden">
+            <Navigation 
+              user={user} 
+              onAuthClick={() => setIsAuthOpen(true)} 
+              onDemoClick={() => setIsDemoOpen(true)} 
+              onLoginClick={() => setIsAuthOpen(true)}
+              onContactClick={() => setIsContactOpen(true)}
+            />
+            <HeroSection user={user} onAuthClick={() => setIsAuthOpen(true)} onDemoClick={() => setIsDemoOpen(true)} />
+            <FeaturesOrbit />
+            <FeatureThemes />
+            <EditorPreview onAuthClick={() => setIsAuthOpen(true)} />
+            <FeatureAnalytics />
+            <FeatureQR user={user} />
+            <Pricing user={user} onPlanClick={(planName) => {
+              if (user) {
+                if (planName.toLowerCase() === 'starter') {
+                  navigate('/dashboard');
+                } else {
+                  navigate(`/checkout?plan=${planName}`);
+                }
+              } else {
+                setIsAuthOpen(true);
+              }
+            }} />
+            <SocialProof />
+            <FAQ />
+            <FinalCTA user={user} onAuthClick={() => setIsAuthOpen(true)} onCompareClick={() => setShowCompare(true)} />
+            <Footer onContactOpenChange={() => setIsContactOpen(true)} />
+          </main>
+        } />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/signup" element={<AuthPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/about" element={<AboutPage onContactClick={() => setIsContactOpen(true)} />} />
+        <Route path="/blog" element={<BlogPage onContactClick={() => setIsContactOpen(true)} />} />
+        <Route path="/careers" element={<CareersPage onContactClick={() => setIsContactOpen(true)} />} />
+        <Route path="/privacy" element={<PrivacyPage onContactClick={() => setIsContactOpen(true)} />} />
+        <Route path="/terms" element={<TermsPage onContactClick={() => setIsContactOpen(true)} />} />
+        <Route path="/:slug" element={<ProfilePage />} />
+      </Routes>
 
-        <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-        <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
-        <ComparePlansModal isOpen={showCompare} onClose={() => setShowCompare(false)} />
-        
-        {/* Contact Sheet */}
-        <Sheet open={isContactOpen} onOpenChange={setIsContactOpen}>
-          <SheetContent side="right" className="w-full sm:max-w-md bg-aura-navy/95 backdrop-blur-xl border-aura-glass-border p-0 overflow-hidden">
-            <div className="h-full flex flex-col">
-              <div className="p-8 border-b border-white/5">
-                <SheetTitle className="font-display font-bold text-3xl text-aura-text mb-2">Get in touch</SheetTitle>
-                <SheetDescription className="text-aura-text-secondary text-base">
-                  Have a question or need assistance? We're here to help you elevate your digital Aura.
-                </SheetDescription>
-              </div>
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
+      <ComparePlansModal isOpen={showCompare} onClose={() => setShowCompare(false)} />
+      
+      {/* Contact Sheet */}
+      <Sheet open={isContactOpen} onOpenChange={setIsContactOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md bg-aura-navy/95 backdrop-blur-xl border-aura-glass-border p-0 overflow-hidden">
+          <div className="h-full flex flex-col">
+            <div className="p-8 border-b border-white/5">
+              <SheetTitle className="font-display font-bold text-3xl text-aura-text mb-2">Get in touch</SheetTitle>
+              <SheetDescription className="text-aura-text-secondary text-base">
+                Have a question or need assistance? We're here to help you elevate your digital Aura.
+              </SheetDescription>
+            </div>
 
-              <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-bold text-aura-violet uppercase tracking-[0.2em]">Contact Channels</h4>
-                  
-                  <a href="mailto:support@feel-flytech.site" className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-aura-violet/30 hover:bg-aura-violet/5 transition-all group">
-                    <div className="w-12 h-12 rounded-xl bg-aura-violet/10 flex items-center justify-center text-aura-violet group-hover:scale-110 transition-transform">
-                      <Mail className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest mb-1">Email Support</p>
-                      <p className="text-aura-text font-medium">support@feel-flytech.site</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-aura-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </a>
-
-                  <a href="tel:+2349048564696" className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-aura-cyan/30 hover:bg-aura-cyan/5 transition-all group">
-                    <div className="w-12 h-12 rounded-xl bg-aura-cyan/10 flex items-center justify-center text-aura-cyan group-hover:scale-110 transition-transform">
-                      <Phone className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest mb-1">Call Us</p>
-                      <p className="text-aura-text font-medium">+234 904 856 4696</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-aura-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </a>
-
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-aura-pink/30 hover:bg-aura-pink/5 transition-all group">
-                    <div className="w-12 h-12 rounded-xl bg-aura-pink/10 flex items-center justify-center text-aura-pink group-hover:scale-110 transition-transform">
-                      <MessageSquare className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest mb-1">Live Chat</p>
-                      <p className="text-aura-text font-medium">Available 9am - 5pm WAT</p>
-                    </div>
+            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-bold text-aura-violet uppercase tracking-[0.2em]">Contact Channels</h4>
+                
+                <a href="mailto:support@feel-flytech.site" className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-aura-violet/30 hover:bg-aura-violet/5 transition-all group">
+                  <div className="w-12 h-12 rounded-xl bg-aura-violet/10 flex items-center justify-center text-aura-violet group-hover:scale-110 transition-transform">
+                    <Mail className="w-6 h-6" />
                   </div>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-aura-violet/10 to-aura-cyan/10 border border-white/5 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <h4 className="font-display font-bold text-lg text-aura-text mb-2 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-aura-pink" /> Premium Support
-                    </h4>
-                    <p className="text-sm text-aura-text-secondary leading-relaxed">
-                      Pro and Teams members get priority response times and dedicated account management.
-                    </p>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest mb-1">Email Support</p>
+                    <p className="text-aura-text font-medium">support@feel-flytech.site</p>
                   </div>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-aura-violet/10 blur-3xl -mr-16 -mt-16 rounded-full" />
+                  <ExternalLink className="w-4 h-4 text-aura-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
+
+                <a href="tel:+2349048564696" className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-aura-cyan/30 hover:bg-aura-cyan/5 transition-all group">
+                  <div className="w-12 h-12 rounded-xl bg-aura-cyan/10 flex items-center justify-center text-aura-cyan group-hover:scale-110 transition-transform">
+                    <Phone className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest mb-1">Call Us</p>
+                    <p className="text-aura-text font-medium">+234 904 856 4696</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-aura-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
+
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-aura-pink/30 hover:bg-aura-pink/5 transition-all group">
+                  <div className="w-12 h-12 rounded-xl bg-aura-pink/10 flex items-center justify-center text-aura-pink group-hover:scale-110 transition-transform">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest mb-1">Live Chat</p>
+                    <p className="text-aura-text font-medium">Available 9am - 5pm WAT</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-8 border-t border-white/5 bg-white/[0.02]">
-                <button 
-                  onClick={() => setIsContactOpen(false)}
-                  className="w-full btn-primary py-4 text-sm font-bold shadow-lg shadow-aura-violet/20"
-                >
-                  Close Contact Info
-                </button>
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-aura-violet/10 to-aura-cyan/10 border border-white/5 relative overflow-hidden">
+                <div className="relative z-10">
+                  <h4 className="font-display font-bold text-lg text-aura-text mb-2 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-aura-pink" /> Premium Support
+                  </h4>
+                  <p className="text-sm text-aura-text-secondary leading-relaxed">
+                    Pro and Teams members get priority response times and dedicated account management.
+                  </p>
+                </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-aura-violet/10 blur-3xl -mr-16 -mt-16 rounded-full" />
               </div>
             </div>
-          </SheetContent>
-        </Sheet>
 
-        <Toaster 
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: 'rgba(7, 9, 19, 0.8)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#F4F6FF',
-            },
-          }}
-        />
+            <div className="p-8 border-t border-white/5 bg-white/[0.02]">
+              <button 
+                onClick={() => setIsContactOpen(false)}
+                className="w-full btn-primary py-4 text-sm font-bold shadow-lg shadow-aura-violet/20"
+              >
+                Close Contact Info
+              </button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: 'rgba(7, 9, 19, 0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#F4F6FF',
+          },
+        }}
+      />
+    </>
+  );
+};
+
+function App() {
+  return (
+    <HelmetProvider>
+      <Router>
+        <AppContent />
       </Router>
     </HelmetProvider>
   );

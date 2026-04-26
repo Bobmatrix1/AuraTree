@@ -46,11 +46,14 @@ export const initializeTransaction = async (
   };
 }> => {
   try {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const defaultUrl = isProduction ? 'https://auratree.site' : 'http://localhost:5175';
+    
     const body: any = {
       email,
       amount: amount, // Amount is already in kobo from PLANS config
       metadata,
-      callback_url: `${process.env.FRONTEND_URL || 'http://localhost:5175'}/dashboard?tab=settings`,
+      callback_url: `${process.env.FRONTEND_URL || defaultUrl}/dashboard?tab=settings`,
     };
 
     if (plan) {

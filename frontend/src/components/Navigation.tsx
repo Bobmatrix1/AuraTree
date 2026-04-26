@@ -104,24 +104,30 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactCli
   return (
     <>
       <nav
-        className={`site-navigation transition-all duration-500`}
+        className="site-navigation"
         style={{ 
-          backgroundColor: isScrolled ? 'rgba(2, 6, 23, 0.95)' : 'transparent',
+          transition: 'background-color 0.4s ease, border-color 0.4s ease',
+          backgroundColor: isScrolled 
+            ? (theme === 'dark' ? '#020617' : '#FFFFFF') 
+            : 'transparent',
+          borderBottom: `1px solid ${isScrolled ? (theme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)') : 'transparent'}`,
+          backdropFilter: isScrolled ? 'blur(12px)' : 'none',
+          willChange: 'background-color'
         }}
       >
         <div className="w-full px-4 sm:px-6 lg:px-12">
           <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20">
             {/* Logo */}
-            <div className="flex items-center gap-0 group relative z-[60]">
-              <div className="w-14 h-14 sm:w-20 sm:h-20 -mr-2 sm:-mr-4 flex items-center justify-center transition-transform duration-300">
+            <div className="flex items-center gap-2 group relative z-[60]">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-transform duration-300">
                 <img 
-                  src="/aura%20tree%20logo.png" 
+                  src="/logo-icon.svg" 
                   alt="Aura Tree Logo" 
-                  className="w-full h-full object-contain scale-[3.2] invert dark:invert-0 transition-all duration-300" 
+                  className="w-full h-full object-contain transition-all duration-300" 
                 />
               </div>
-              <span className="font-display font-bold text-lg sm:text-xl text-aura-text transition-colors">
-                Aura <span className="text-aura-violet">Tree</span>
+              <span className="font-display font-bold text-xl sm:text-2xl tracking-tight text-aura-violet transition-colors">
+                Aura Tree
               </span>
             </div>
 

@@ -234,6 +234,55 @@ const Dashboard = () => {
   
   const navigate = useNavigate();
 
+  // Automatic Payment Verification
+  useEffect(() => {
+    const reference = searchParams.get('reference');
+    if (reference) {
+      const verifyPayment = async () => {
+        const toastId = toast.loading('Verifying your payment...');
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          const response = await fetch(`${API_V1_URL}/payments/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ reference })
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            toast.success('Subscription activated!', { 
+              id: toastId,
+              description: `You are now on the ${data.data.plan.toUpperCase()} plan.`
+            });
+            // Force refresh user data
+            const userDoc = await getDoc(doc(db, 'users', auth.currentUser?.uid || ''));
+            if (userDoc.exists()) setUserData(userDoc.data());
+          } else {
+            throw new Error(data.message);
+          }
+        } catch (error: any) {
+          toast.error('Verification failed', { 
+            id: toastId,
+            description: error.message || 'Please contact support if funds were deducted.' 
+          });
+        } finally {
+          // Clean URL
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('reference');
+          newParams.delete('trxref');
+          navigate(`/dashboard?${newParams.toString()}`, { replace: true });
+        }
+      };
+
+      if (user) {
+        verifyPayment();
+      }
+    }
+  }, [searchParams, user]);
+
   const fetchAnalytics = async () => {
     if (!auraTree?.id) return;
     setIsFetchingAnalytics(true);
@@ -489,20 +538,29 @@ const Dashboard = () => {
     const svg = document.getElementById('qr-code-svg');
     if (!svg) return;
 
-    const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
+    const logoImg = new Image();
 
     canvas.width = 1000;
     canvas.height = 1000;
 
-    img.onload = async () => {
-      if (ctx) {
+    // Load both images
+    let imagesLoaded = 0;
+    const checkLoaded = () => {
+      imagesLoaded++;
+      if (imagesLoaded === 2 && ctx) {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, 1000, 1000);
         ctx.drawImage(img, 0, 0, 1000, 1000);
-        
+
+        // Manually draw logo in center
+        const logoSize = 220; // Proportional to 1000px canvas
+        const x = (1000 - logoSize) / 2;
+        const y = (1000 - logoSize) / 2;
+        ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+
         canvas.toBlob(async (blob) => {
           if (blob && navigator.share) {
             const file = new File([blob], `auratree-qr-${auraTree?.slug}.png`, { type: 'image/png' });
@@ -522,27 +580,42 @@ const Dashboard = () => {
       }
     };
 
+    img.onload = checkLoaded;
+    logoImg.onload = checkLoaded;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     img.src = URL.createObjectURL(svgBlob);
+    logoImg.src = '/logo-icon.svg';
   };
 
   const downloadQR = () => {
     const svg = document.getElementById('qr-code-svg');
     if (!svg) return;
 
-    const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
+    const logoImg = new Image();
 
     canvas.width = 2000;
     canvas.height = 2000;
 
-    img.onload = () => {
-      if (ctx) {
+    let imagesLoaded = 0;
+    const checkLoaded = () => {
+      imagesLoaded++;
+      if (imagesLoaded === 2 && ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, 2000, 2000);
         ctx.drawImage(img, 0, 0, 2000, 2000);
-        
+
+        // Draw logo
+        const logoSize = 440;
+        const x = (2000 - logoSize) / 2;
+        const y = (2000 - logoSize) / 2;
+        ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+
         const pngFile = canvas.toDataURL('image/png');
         const downloadLink = document.createElement('a');
         downloadLink.download = `auratree-qr-${auraTree?.slug || 'profile'}.png`;
@@ -552,11 +625,14 @@ const Dashboard = () => {
       }
     };
 
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    img.src = url;
-  };
+    img.onload = checkLoaded;
+    logoImg.onload = checkLoaded;
 
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    img.src = URL.createObjectURL(svgBlob);
+    logoImg.src = '/logo-icon.svg';
+  };
   const fetchAuraTree = async () => {
     try {
       const response = await fetch(`${API_V1_URL}/auratree/me`, {
@@ -1265,10 +1341,9 @@ const Dashboard = () => {
                         {isFree ? 'Unlock premium glassmorphic themes, full branding control, and a 100% ad-free experience by upgrading to Pro.' : 'Remove the "aura-" prefix entirely and enjoy an ad-free workspace with the Teams plan.'}
                       </p>
                     </div>
-                    <button onClick={() => window.location.href = '/?action=upgrade'} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
+                    <button onClick={() => { sessionStorage.setItem('scroll_to_pricing', 'true'); window.location.href = '/'; }} className="btn-primary py-3 px-8 text-sm whitespace-nowrap shadow-xl shadow-aura-violet/20 hover:scale-105 transition-transform">
                                            Upgrade Now
                                          </button>
-
                   </div>
                   <div className="absolute top-0 right-0 w-64 h-64 bg-aura-violet/10 blur-[100px] -mr-32 -mt-32 rounded-full" />
                 </div>
@@ -1756,10 +1831,10 @@ const Dashboard = () => {
                               ))}
                             </div>
                           </div>
-                          <div className="h-14 flex flex-col items-center justify-center flex-shrink-0 opacity-40">
-                            <div className="flex items-center gap-1.5 mb-2">
+                          <div className="h-14 flex flex-col items-center justify-center flex-shrink-0">
+                            <div className="flex items-center gap-1.5 mb-2 opacity-80">
                               <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
-                                <img src="/aura%20tree%20logo.png" className="w-full h-full object-contain scale-[3.2]" style={{ filter: THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'none' : 'invert(1)' }} alt="" />
+                                <img src="/logo-icon.svg" className="w-full h-full object-contain" alt="" />
                               </div>
                               <span className={`text-[8px] font-bold uppercase tracking-widest ${THEMES.find(t => t.background === auraTree?.theme?.background)?.isLight ? 'text-slate-900' : 'text-white'}`}>Aura Tree</span>
                             </div>
@@ -1827,10 +1902,25 @@ const Dashboard = () => {
           <div className="absolute inset-0 bg-aura-navy/95 backdrop-blur-xl" onClick={() => setShowShareModal(false)} />
           <div className="relative w-full max-w-lg glass-card p-6 sm:p-10 shadow-[0_0_100px_rgba(123,97,255,0.2)] animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto no-scrollbar" data-lenis-prevent>
             <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 text-aura-text-secondary hover:text-aura-text transition-colors z-10"><LucideX className="w-5 h-5 sm:w-6 sm:h-6" /></button>
-            <div className="flex flex-col items-center text-center"><div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 flex items-center justify-center transition-transform duration-300"><img src="/aura%20tree%20logo.png" alt="Aura Tree Logo" className="w-full h-full object-contain scale-[3.2] invert dark:invert-0 transition-all duration-300" /></div><h2 className="font-display font-bold text-2xl sm:text-3xl text-aura-text">Your Aura is Live!</h2><p className="text-aura-text-secondary text-sm mt-2 sm:mt-3 max-w-sm">Share your unique link and QR code with your audience.</p></div>
+            <div className="flex flex-col items-center text-center"><div className="w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6 flex items-center justify-center transition-transform duration-300"><img src="/logo-icon.svg" alt="Aura Tree Logo" className="w-full h-full object-contain invert dark:invert-0 transition-all duration-300" /></div><h2 className="font-display font-bold text-2xl sm:text-3xl text-aura-text">Your Aura is Live!</h2><p className="text-aura-text-secondary text-sm mt-2 sm:mt-3 max-w-sm">Share your unique link and QR code with your audience.</p></div>
             <div className="mt-6 sm:mt-10 space-y-6 sm:space-y-8">
               <div className="space-y-2"><label className="text-[10px] font-bold text-aura-text-secondary uppercase tracking-widest ml-1">Profile Link</label><div className="flex gap-2"><div className="flex-1 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-4 text-aura-text text-sm sm:text-base font-medium truncate">{window.location.origin}/{auraTree?.slug}</div><button onClick={() => copyToClipboard(`${window.location.origin}/${auraTree?.slug}`)} className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-aura-violet text-white hover:bg-aura-violet/90 transition-all shadow-lg"><LucideCopy className="w-5 h-5 sm:w-6 sm:h-6" /></button></div></div>
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 bg-white/[0.03] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5"><div className="w-24 h-24 sm:w-32 sm:h-32 bg-white p-1.5 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden shrink-0 flex items-center justify-center"><QRCodeSVG id="qr-code-svg" value={`${API_V1_URL}/auratree/qr/${auraTree?.slug}`} size={512} style={{ width: '100%', height: '100%' }} level="H" includeMargin={false} imageSettings={{ src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTYwIj48cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTQwIiByeD0iMjUiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNjAgMTEwIEw2MCA3MCBNNjAgODAgTDQwIDU1IE02MCA4MCBMODAgNTUgTTYwIDcwIEw1MCA0MCBNNjAgNzAgTDcwIDQwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+PC9zdmc+", x: undefined, y: undefined, height: 128, width: 128, excavate: true }} /></div><div className="flex-1 text-center sm:text-left space-y-2 sm:space-y-4"><h4 className="text-aura-text font-bold text-base sm:text-lg leading-tight">Official QR Code</h4><div className="flex flex-wrap items-center justify-center sm:justify-start gap-3"><button onClick={downloadQR} className="flex items-center gap-2 text-aura-violet font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:text-aura-cyan transition-colors"><LucideDownload className="w-3 h-3 sm:w-4 sm:h-4" /> Download</button><button onClick={shareQR} className="flex items-center gap-2 text-aura-cyan font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:text-aura-violet transition-colors"><LucideShare className="w-3 h-3 sm:w-4 sm:h-4" /> Share QR</button></div></div></div>
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 bg-white/[0.03] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5"><div className="w-24 h-24 sm:w-32 sm:h-32 bg-white p-1.5 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden shrink-0 flex items-center justify-center"><QRCodeSVG 
+                    id="qr-code-svg" 
+                    value={`${API_V1_URL}/auratree/qr/${auraTree?.slug}`} 
+                    size={512} 
+                    style={{ width: '100%', height: '100%' }} 
+                    level="H" 
+                    includeMargin={false} 
+                    imageSettings={{ 
+                      src: "/logo-icon.svg", 
+                      x: undefined, 
+                      y: undefined, 
+                      height: 110, 
+                      width: 110, 
+                      excavate: true 
+                    }} 
+                  /></div><div className="flex-1 text-center sm:text-left space-y-2 sm:space-y-4"><h4 className="text-aura-text font-bold text-base sm:text-lg leading-tight">Official QR Code</h4><div className="flex flex-wrap items-center justify-center sm:justify-start gap-3"><button onClick={downloadQR} className="flex items-center gap-2 text-aura-violet font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:text-aura-cyan transition-colors"><LucideDownload className="w-3 h-3 sm:w-4 sm:h-4" /> Download</button><button onClick={shareQR} className="flex items-center gap-2 text-aura-cyan font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:text-aura-violet transition-colors"><LucideShare className="w-3 h-3 sm:w-4 sm:h-4" /> Share QR</button></div></div></div>
             </div>
           </div>
         </div>

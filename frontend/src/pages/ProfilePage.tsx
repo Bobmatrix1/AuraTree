@@ -211,21 +211,19 @@ const ProfilePage = () => {
           ))}
         </div>
 
-        {/* Footer */}
         <footer className="mt-20 flex flex-col items-center gap-4 pb-12">
-          <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity duration-300 cursor-default">
-            <div className="w-6 h-6 flex items-center justify-center overflow-hidden">
-              <img src="/aura%20tree%20logo.png" className="w-full h-full object-contain scale-[2.8] invert dark:invert-0" alt="Aura Tree" />
+          <div className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity duration-300 cursor-default">
+            <div className="w-3.5 h-3.5 flex items-center justify-center overflow-hidden">
+              <img src="/logo-icon.svg" className="w-full h-full object-contain" alt="Aura Tree" />
             </div>
             <span className="text-[9px] lg:text-[10px] font-bold uppercase tracking-[0.3em] text-white">Created with Aura Tree</span>
           </div>
-          
           <button 
             onClick={() => window.location.href = '/'} 
             className="group relative flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-aura-violet/50 py-3.5 px-8 sm:px-10 rounded-full transition-all duration-300 hover:shadow-[0_0_30px_rgba(123,97,255,0.3)] active:scale-95 overflow-hidden"
           >
             <div className="w-8 h-8 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <img src="/aura%20tree%20logo.png" className="w-full h-full object-contain scale-[4.5] invert dark:invert-0" alt="" />
+              <img src="/logo-icon.svg" className="w-full h-full object-contain invert dark:invert-0" alt="" />
             </div>
             <span className="text-xs lg:text-sm font-bold text-aura-text group-hover:text-aura-violet transition-colors uppercase tracking-widest relative z-10 whitespace-nowrap">
               Create your own aura link

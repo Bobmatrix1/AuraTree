@@ -32,37 +32,31 @@ const PropellerAdsManager = ({ isAuthOpen }: { isAuthOpen?: boolean }) => {
     const isModalVisuallyOpen = document.body.style.overflow === 'hidden' && !!document.querySelector('.glass-card h2')?.textContent?.match(/Sign In|Create Account|Login|Signup|Reset Password/i);
     const isProtectedContext = criticalPages.some(page => location.pathname.startsWith(page)) || isAuthOpen || isModalVisuallyOpen;
 
-    // SHIELD: Intercept all network calls to ad domains in protected contexts
+    const adDomains = ['6opo.com', 'quge5.com', '5gvci.com', 'pl254321.top', 'proproads'];
+
+    // SHIELD: Intercept all network calls to ad domains
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
+      if (adDomains.some(domain => url.includes(domain))) {
+        // Return a fake successful response that contains nothing
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      return originalFetch.apply(this, args);
+    };
+
+    const originalXHR = window.XMLHttpRequest.prototype.open;
+    window.XMLHttpRequest.prototype.open = function(...args: any[]) {
+      const url = args[1];
+      if (typeof url === 'string' && adDomains.some(domain => url.includes(domain))) {
+        // Just return and don't actually open the connection
+        return; 
+      }
+      return originalXHR.apply(this, args as any);
+    };
+
     if (isProtectedContext) {
-      console.log('🛡️ Network Shield Active: Blocking Ad Domains');
-      
-      // Override Fetch
-      const originalFetch = window.fetch;
-      window.fetch = function(...args) {
-        const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
-        if (url.includes('6opo.com') || url.includes('quge5.com') || url.includes('5gvci.com') || url.includes('proproads')) {
-          return Promise.reject(new Error('Blocked by Aura Shield'));
-        }
-        return originalFetch.apply(this, args);
-      };
-
-      // Override XHR
-      const originalXHR = window.XMLHttpRequest.prototype.open;
-      window.XMLHttpRequest.prototype.open = function(...args: any[]) {
-        const url = args[1];
-        if (typeof url === 'string' && (url.includes('6opo.com') || url.includes('quge5.com') || url.includes('5gvci.com'))) {
-          console.warn('Blocked XHR to ad domain');
-          return; 
-        }
-        return originalXHR.apply(this, args as any);
-      };
-
       nuclearRemoveAds();
-      
-      return () => {
-        window.fetch = originalFetch;
-        window.XMLHttpRequest.prototype.open = originalXHR;
-      };
     }
 
     if (!isPlanLoaded) return;
@@ -115,11 +109,9 @@ const PropellerAdsManager = ({ isAuthOpen }: { isAuthOpen?: boolean }) => {
     }
 
     function nuclearRemoveAds() {
-      // 1. Remove scripts
       document.querySelectorAll('script[data-zone="228814"]').forEach(s => s.remove());
-      document.querySelectorAll('script[src*="quge5.com"], script[src*="5gvci.com"], script[src*="6opo.com"]').forEach(s => s.remove());
+      document.querySelectorAll('script[src*="quge5.com"], script[src*="5gvci.com"], script[src*="6opo.com"], script[src*="pl254321.top"]').forEach(s => s.remove());
       
-      // 2. Clear global objects
       const pKeys = ['propeller', 'prophsh', 'pps', 'pp_ms', 'pp_s', 'pp_ns', 'p_v', 'p_r'];
       pKeys.forEach(key => {
         try {
@@ -128,7 +120,6 @@ const PropellerAdsManager = ({ isAuthOpen }: { isAuthOpen?: boolean }) => {
         } catch (e) {}
       });
 
-      // 3. Force stop any remaining timers
       let id = window.setTimeout(() => {}, 0);
       while (id--) {
         window.clearTimeout(id);
@@ -140,6 +131,8 @@ const PropellerAdsManager = ({ isAuthOpen }: { isAuthOpen?: boolean }) => {
     window.addEventListener('touchstart', handleInteraction, { once: true });
 
     return () => {
+      window.fetch = originalFetch;
+      window.XMLHttpRequest.prototype.open = originalXHR;
       window.removeEventListener('mousedown', handleInteraction);
       window.removeEventListener('touchstart', handleInteraction);
     };

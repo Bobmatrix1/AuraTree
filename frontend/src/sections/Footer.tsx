@@ -86,17 +86,18 @@ const Footer = ({ isContactOpen, onContactOpenChange }: FooterProps) => {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div 
-                className="flex items-center gap-0 mb-4"
+                className="flex items-center gap-2 mb-4"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 -ml-2 sm:-mr-2 flex items-center justify-center transition-transform duration-300">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-transform duration-300">
                   <img 
-                    src="/aura%20tree%20logo.png" 
+                    src="/logo-icon.svg" 
                     alt="Aura Tree Logo" 
-                    className="w-full h-full object-contain scale-[3.2] invert dark:invert-0 transition-all duration-300" 
+                    className="w-full h-full object-contain transition-all duration-300" 
                   />
                 </div>
-                <span className="font-display font-semibold text-base sm:text-lg text-aura-text transition-colors">
-                  Aura Tree
+                <span className="font-display font-semibold text-base sm:text-lg transition-colors">
+                  <span className="text-aura-violet">Aura</span>
+                  <span className="text-aura-violet ml-1.5">Tree</span>
                 </span>
               </div>
               <p className="text-aura-text-secondary text-xs sm:text-sm">

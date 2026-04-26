@@ -209,13 +209,13 @@ const AboutPage = ({ onContactClick }: PageProps) => {
       <main className="relative z-10 pt-20 lg:pt-28">
         {/* Floating Back Button (Bottom Left) */}
         <div className="fixed bottom-8 left-6 sm:left-10 z-[100]">
-          <Link 
-            to="/" 
+          <button 
+            onClick={() => navigate(-1)}
             className="flex items-center justify-center w-12 h-12 text-aura-text-secondary hover:text-aura-text transition-all group bg-aura-navy/40 backdrop-blur-xl rounded-full border border-white/10 hover:border-aura-violet shadow-2xl"
-            title="Back to Home"
+            title="Go Back"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          </Link>
+          </button>
         </div>
 
         {/* Hero */}

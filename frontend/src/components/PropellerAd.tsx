@@ -47,6 +47,11 @@ const PropellerAd = ({ zoneId, format, className }: PropellerAdProps) => {
     const script = document.createElement('script');
     script.async = true;
     script.dataset.cfasync = 'false';
+    
+    script.onerror = () => {
+      // Fail silently if blocked by shield or ad-blocker
+      if (adRef.current) adRef.current.innerHTML = '';
+    };
 
     if (format === 'banner') {
       script.src = `//pl254321.top/${zoneId}/invoke.js`;
@@ -61,6 +66,11 @@ const PropellerAd = ({ zoneId, format, className }: PropellerAdProps) => {
     return () => {
       if (format === 'banner' && adRef.current) {
         adRef.current.innerHTML = '';
+      }
+      if (format === 'interstitial') {
+        // Remove interstitial script on cleanup
+        const scripts = document.querySelectorAll(`script[src*="${zoneId}"]`);
+        scripts.forEach(s => s.remove());
       }
     };
   }, [zoneId, format, userPlan, isPlanLoaded]);

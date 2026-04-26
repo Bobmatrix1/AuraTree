@@ -147,9 +147,9 @@ const EditorPreview = ({ onAuthClick }: EditorPreviewProps) => {
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-aura-violet to-aura-cyan p-0.5 mb-3 shadow-xl shadow-aura-violet/10 flex-shrink-0">
                   <div className="w-full h-full rounded-full bg-aura-navy-light flex items-center justify-center border-2 border-aura-navy-light overflow-hidden">
                     <img 
-                      src="/aura%20tree%20logo.png" 
+                      src="/logo-icon.svg" 
                       alt="Aura Tree Logo" 
-                      className="w-full h-full object-cover scale-[2.2] invert dark:invert-0 transition-all duration-300" 
+                      className="w-full h-full object-cover transition-all duration-300" 
                     />
                   </div>
                 </div>
@@ -177,8 +177,10 @@ const EditorPreview = ({ onAuthClick }: EditorPreviewProps) => {
                 </div>
 
                 {/* Footer Brand - Pulled up */}
-                <div className="mt-6 mb-4 flex items-center gap-1.5 opacity-30 flex-shrink-0">
-                  <Plus className="w-2.5 h-2.5 text-aura-violet rotate-45" />
+                <div className="mt-6 mb-4 flex items-center gap-1.5 opacity-60 flex-shrink-0">
+                  <div className="w-4 h-4 flex items-center justify-center overflow-hidden">
+                    <img src="/logo-icon.svg" className="w-full h-full object-contain" alt="" />
+                  </div>
                   <span className="text-[8px] font-bold uppercase tracking-widest text-aura-text">Aura Tree</span>
                 </div>
               </div>

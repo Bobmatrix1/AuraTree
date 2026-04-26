@@ -58,9 +58,9 @@ const FinalCTA = ({ onCompareClick, onAuthClick, user }: FinalCTAProps) => {
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-aura-violet to-aura-cyan p-0.5 animate-pulse-glow flex-shrink-0">
               <div className="w-full h-full rounded-full bg-aura-navy flex items-center justify-center border-2 border-aura-navy overflow-hidden">
                 <img 
-                  src="/aura%20tree%20logo.png" 
+                  src="/logo-icon.svg" 
                   alt="Aura Tree Logo" 
-                  className="w-full h-full object-cover scale-[2.2] invert dark:invert-0 transition-all duration-300" 
+                  className="w-full h-full object-cover transition-all duration-300" 
                 />
               </div>
             </div>

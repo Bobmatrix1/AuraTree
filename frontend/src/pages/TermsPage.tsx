@@ -8,7 +8,7 @@ import Navigation from '../components/Navigation';
 import PropellerAd from '../components/PropellerAd';
 import Footer from '../sections/Footer';
 import Starfield from '../components/Starfield';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -19,6 +19,7 @@ interface PageProps {
 
 const TermsPage = ({ onContactClick }: PageProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Redirect to home if page is refreshed
@@ -75,13 +76,13 @@ const TermsPage = ({ onContactClick }: PageProps) => {
       <main className="relative z-10 pt-24 lg:pt-32 pb-20">
         {/* Floating Back Button */}
         <div className="fixed bottom-8 left-6 sm:left-10 z-[100]">
-          <Link 
-            to="/" 
+          <button 
+            onClick={() => navigate(-1)}
             className="flex items-center justify-center w-12 h-12 text-aura-text-secondary hover:text-aura-text transition-all group bg-aura-navy/40 backdrop-blur-xl rounded-full border border-white/10 hover:border-aura-violet shadow-2xl"
-            title="Back to Home"
+            title="Go Back"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          </Link>
+          </button>
         </div>
 
         <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto legal-content">

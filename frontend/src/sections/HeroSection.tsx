@@ -152,9 +152,9 @@ const HeroSection = ({ user, onDemoClick, onAuthClick }: HeroSectionProps) => {
             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-aura-violet to-aura-cyan p-0.5 mb-4 sm:mb-6 shadow-2xl shadow-aura-violet/20">
               <div className="w-full h-full rounded-full bg-aura-navy flex items-center justify-center border-2 border-aura-navy overflow-hidden">
                 <img 
-                  src="/aura%20tree%20logo.png" 
+                  src="/logo-icon.svg" 
                   alt="Aura Tree Logo" 
-                  className="w-full h-full object-cover scale-[2.2] invert dark:invert-0 transition-all duration-300" 
+                  className="w-full h-full object-cover transition-all duration-300" 
                 />
               </div>
             </div>

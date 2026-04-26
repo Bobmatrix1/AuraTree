@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { auth, db } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -117,7 +117,12 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-aura-navy py-12 px-4 sm:px-6 lg:px-8">
+    <div 
+      className="min-h-screen bg-aura-navy py-12 px-4 sm:px-6 lg:px-8"
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <button 
@@ -202,7 +207,7 @@ const Checkout = () => {
               </div>
 
               <p className="text-center text-[10px] text-aura-text-secondary px-4 uppercase tracking-widest font-semibold">
-                By clicking pay, you agree to our Terms of Service
+                By clicking pay, you agree to our <Link to="/terms" className="text-aura-violet hover:underline">Terms of Service</Link>
               </p>
             </div>
           </div>

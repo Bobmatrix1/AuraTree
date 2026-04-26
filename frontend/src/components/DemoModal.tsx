@@ -74,7 +74,7 @@ const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <img src="/aura%20tree%20logo.png" className="w-10 h-10 sm:w-12 sm:h-12 object-contain scale-[3.2] invert dark:invert-0" />
+            <img src="/logo-icon.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
             <div>
               <h2 className="font-display font-bold text-lg sm:text-xl text-aura-text">Aura Tree Demo</h2>
               <p className="text-xs text-aura-text-secondary">Interactive Platform Experience</p>
@@ -115,7 +115,7 @@ const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
                     <div className="flex flex-col items-center">
                       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-aura-violet to-aura-cyan p-0.5 mb-3 shadow-xl flex-shrink-0">
                         <div className="w-full h-full rounded-full bg-aura-navy-light flex items-center justify-center border-2 border-aura-navy-light overflow-hidden">
-                          <img src="/aura%20tree%20logo.png" className="w-full h-full object-cover scale-[2.2] invert dark:invert-0 transition-all" />
+                          <img src="/logo-icon.svg" className="w-full h-full object-cover transition-all" />
                         </div>
                       </div>
                       <h3 className="font-display font-bold text-aura-text text-sm flex-shrink-0">@auratree</h3>
@@ -132,8 +132,10 @@ const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
                       </div>
 
                       {/* Branding - Now part of the scrollable content */}
-                      <div className="mt-12 mb-6 flex justify-center items-center gap-1.5 opacity-30 flex-shrink-0">
-                        <Sparkles className="w-2.5 h-2.5 text-aura-violet" />
+                      <div className="mt-12 mb-6 flex justify-center items-center gap-1.5 opacity-60 flex-shrink-0">
+                        <div className="w-4 h-4 flex items-center justify-center overflow-hidden">
+                          <img src="/logo-icon.svg" className="w-full h-full object-contain" alt="" />
+                        </div>
                         <span className="text-[9px] font-bold uppercase tracking-widest text-aura-text">Aura Tree</span>
                       </div>
                       </div>

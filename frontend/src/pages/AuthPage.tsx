@@ -209,9 +209,9 @@ const AuthPage = () => {
         <Link to="/" className="flex items-center gap-0 group">
           <div className="w-14 h-14 sm:w-20 sm:h-20 -mr-2 sm:-mr-4 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
             <img 
-              src="/aura%20tree%20logo.png" 
+              src="/logo-icon.svg" 
               alt="Aura Tree Logo" 
-              className="w-full h-full object-contain scale-[3.2] drop-shadow-[0_0_10px_rgba(123,97,255,0.3)] invert dark:invert-0 transition-all duration-300" 
+              className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(123,97,255,0.3)] invert dark:invert-0 transition-all duration-300" 
             />
           </div>
           <span className="font-display font-bold text-lg sm:text-xl text-aura-text group-hover:text-aura-violet transition-colors">
@@ -236,9 +236,9 @@ const AuthPage = () => {
             {/* EVEN LARGER CENTRAL LOGO */}
             <div className="w-64 h-64 sm:w-96 sm:h-96 -mb-20 sm:-mb-32 animate-float pointer-events-none">
               <img 
-                src="/aura%20tree%20logo.png" 
+                src="/logo-icon.svg" 
                 alt="Aura Tree" 
-                className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(123,97,255,1)] scale-110 invert dark:invert-0 transition-all duration-300" 
+                className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(123,97,255,1)] invert dark:invert-0 transition-all duration-300" 
               />
             </div>
             
