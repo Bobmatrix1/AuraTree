@@ -54,6 +54,8 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactCli
     try {
       await signOut(auth);
       toast.success('Logged out successfully', { duration: 2000 });
+      // Use window.location.href to force a full state reset
+      window.location.href = '/';
     } catch (error) {
       toast.error('Failed to log out');
     }

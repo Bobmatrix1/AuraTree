@@ -19,6 +19,20 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [prices, setPrices] = useState({ pro: 1000, teams: 10000 });
 
+  // Reset processing state on mount and when page is shown (handles back button)
+  useEffect(() => {
+    setIsProcessing(false);
+    
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setIsProcessing(false);
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   useEffect(() => {
     if (planName.toLowerCase() === 'starter') {
       navigate('/dashboard');

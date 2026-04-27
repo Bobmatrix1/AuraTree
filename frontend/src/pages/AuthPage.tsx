@@ -90,7 +90,7 @@ const AuthPage = () => {
         toast.success('Signed in with Google!', { duration: 2000 });
       }
 
-      navigate('/dashboard', { replace: true });
+      window.location.href = '/dashboard';
     } catch (error: any) {
       console.error('Google Auth error:', error);
       if (error.code !== 'auth/popup-closed-by-user') {

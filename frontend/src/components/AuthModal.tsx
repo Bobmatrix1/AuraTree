@@ -85,7 +85,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }: AuthModalProps) 
       } else {
         toast.success('Signed in with Google!', { duration: 2000 });
       }
-      onClose();
+      window.location.href = '/dashboard';
     } catch (error: any) {
       console.error('Google Auth error:', error);
       if (error.code !== 'auth/popup-closed-by-user') {

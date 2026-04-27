@@ -1139,6 +1139,7 @@ const Dashboard = () => {
   const handleLogout = async () => {
     await auth.signOut();
     toast.success('Logged out successfully', { duration: 2000 });
+    // Use window.location.href to force a full state reset
     window.location.href = '/';
   };
 
