@@ -61,14 +61,14 @@ const Checkout = () => {
 
   const planDetails = {
     Pro: {
-      price: prices.pro.toLocaleString(),
+      price: prices.pro,
       features: ['Unlimited social links', 'Custom themes & backgrounds', 'Custom profile picture', 'Full analytics dashboard', 'Priority support'],
       icon: Zap,
       color: 'text-aura-violet',
       bg: 'bg-aura-violet/10'
     },
     Teams: {
-      price: prices.teams.toLocaleString(),
+      price: prices.teams,
       features: ['Everything in Pro', 'Remove "aura-" prefix', 'Fully branded custom links', 'Team collaboration', 'Admin controls'],
       icon: Users,
       color: 'text-aura-cyan',
@@ -167,21 +167,22 @@ const Checkout = () => {
           <div className="lg:pt-20">
             <div className="glass-card p-8 space-y-6">
               <h3 className="font-display font-bold text-xl text-aura-text">Order Summary</h3>
-              
               <div className="space-y-3 border-b border-white/10 pb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-aura-text-secondary">{planName} Subscription</span>
-                  <span className="text-aura-text font-medium">₦{planDetails.price}</span>
+                  <span className="text-aura-text font-medium">₦{planDetails.price.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-aura-text-secondary">VAT</span>
-                  <span className="text-aura-text font-medium">₦0.00</span>
+                  <span className="text-aura-text-secondary">VAT / Processing Fee</span>
+                  <span className="text-aura-text font-medium">₦20.00</span>
                 </div>
               </div>
 
               <div className="flex justify-between items-end">
-                <span className="text-aura-text font-bold text-lg">Total Due</span>
-                <span className="text-aura-violet font-display font-bold text-3xl">₦{planDetails.price}</span>
+                <div>
+                  <p className="text-xs text-aura-text-secondary uppercase tracking-widest font-bold">Total Amount</p>
+                  <p className="text-3xl font-display font-bold text-aura-text">₦{(planDetails.price + 20).toLocaleString()}</p>
+                </div>
               </div>
 
               <button

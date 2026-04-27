@@ -18,13 +18,13 @@ export const PLANS = {
     name: 'Pro',
     amount: parseInt(process.env.PRO_PLAN_AMOUNT || '100000'), // in kobo (₦1,000.00)
     interval: process.env.PRO_PLAN_INTERVAL || 'monthly',
-    planCode: process.env.PAYSTACK_PRO_PLAN_CODE || '', // Will be created dynamically
+    planCode: process.env.PAYSTACK_PRO_PLAN_CODE || 'PLN_7zr4xxdukyn1sh3',
   },
   TEAMS: {
     name: 'Teams',
     amount: parseInt(process.env.TEAMS_PLAN_AMOUNT || '1000000'), // in kobo (₦10,000.00)
     interval: process.env.TEAMS_PLAN_INTERVAL || 'monthly',
-    planCode: process.env.PAYSTACK_TEAMS_PLAN_CODE || '', // Will be created dynamically
+    planCode: process.env.PAYSTACK_TEAMS_PLAN_CODE || 'PLN_j4153qo0ufg8d1z',
   },
 };
 
@@ -49,9 +49,12 @@ export const initializeTransaction = async (
     const isProduction = process.env.NODE_ENV === 'production';
     const defaultUrl = isProduction ? 'https://auratree.site' : 'http://localhost:5175';
     
+    const VAT_FEE = 2000; // 20 Naira in kobo
+    const totalAmount = amount + VAT_FEE;
+
     const body: any = {
       email,
-      amount: amount, // Amount is already in kobo from PLANS config
+      amount: totalAmount, 
       metadata,
       callback_url: `${process.env.FRONTEND_URL || defaultUrl}/dashboard?tab=settings`,
     };
