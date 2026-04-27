@@ -71,8 +71,8 @@ const ReviewModal = ({ isOpen, onClose }: ReviewModalProps) => {
           <X className="w-6 h-6" />
         </button>
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-aura-violet/20 flex items-center justify-center mb-4">
-            <Sparkles className="w-6 h-6 text-aura-violet" />
+          <div className="w-14 h-14 rounded-2xl bg-aura-violet/10 flex items-center justify-center mb-4 overflow-hidden">
+            <img src="/logo-icon.svg" className="w-10 h-10 object-contain" alt="" />
           </div>
           <h2 className="font-display font-bold text-2xl text-aura-text">Share your Aura!</h2>
           <p className="text-aura-text-secondary text-sm text-center mt-2">Let others know how Aura Tree is helping you grow.</p>

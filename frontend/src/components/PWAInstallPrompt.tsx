@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Share, PlusSquare, Download, Sparkles, Smartphone, Chrome } from 'lucide-react';
+import { X, Share, PlusSquare, Download, Smartphone, Chrome } from 'lucide-react';
 
 const PWAInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -81,7 +81,7 @@ const PWAInstallPrompt = () => {
           
           <div className="flex-1 min-w-0">
             <h3 className="font-display font-bold text-aura-text text-lg flex items-center gap-2">
-              Install Aura Tree <Sparkles className="w-4 h-4 text-aura-pink animate-pulse" />
+              Install Aura Tree
             </h3>
             <p className="text-aura-text-secondary text-sm mt-1 leading-relaxed">
               Add AuraTree to your home screen for a faster, premium experience.

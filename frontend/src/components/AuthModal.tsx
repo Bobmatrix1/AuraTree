@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Sparkles, Mail, Lock, ArrowRight, User, Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { X, Mail, Lock, ArrowRight, User, Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { auth, db } from '../config/firebase';
 import { 
   createUserWithEmailAndPassword, 
@@ -81,9 +81,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }: AuthModalProps) 
           referredBy: referredBy || null,
         });
         if (referredBy) localStorage.removeItem('referred_by');
-        toast.success('Account created with Google!');
+        toast.success('Account created with Google!', { duration: 2000 });
       } else {
-        toast.success('Signed in with Google!');
+        toast.success('Signed in with Google!', { duration: 2000 });
       }
       onClose();
     } catch (error: any) {
@@ -130,12 +130,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }: AuthModalProps) 
           },
         });
 
-        toast.success('Account created successfully!');
+        toast.success('Account created successfully!', { duration: 2000 });
         onClose();
       } else if (mode === 'login') {
         // Login
         await signInWithEmailAndPassword(auth, email, password);
-        toast.success('Logged in successfully!');
+        toast.success('Logged in successfully!', { duration: 2000 });
         onClose();
       } else if (mode === 'forgot-password') {
         // Forgot Password
@@ -191,8 +191,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }: AuthModalProps) 
         )}
 
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-aura-violet to-aura-cyan flex items-center justify-center mb-4">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-aura-violet/10 flex items-center justify-center mb-4 overflow-hidden">
+            <img src="/logo-icon.svg" className="w-10 h-10 object-contain" alt="" />
           </div>
           <h2 className="font-display font-bold text-2xl text-aura-text text-center">
             {mode === 'signup' ? 'Create your account' : 

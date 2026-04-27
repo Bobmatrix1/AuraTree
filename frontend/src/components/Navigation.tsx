@@ -53,7 +53,7 @@ const Navigation = ({ user, onDemoClick, onAuthClick, onLoginClick, onContactCli
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      toast.success('Logged out successfully');
+      toast.success('Logged out successfully', { duration: 2000 });
     } catch (error) {
       toast.error('Failed to log out');
     }

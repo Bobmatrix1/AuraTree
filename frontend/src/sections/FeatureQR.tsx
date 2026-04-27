@@ -81,11 +81,11 @@ const FeatureQR = ({ user }: FeatureQRProps) => {
                       includeMargin={false}
                       className="w-full h-full"
                       imageSettings={{
-                        src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTYwIj48cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTQwIiByeD0iMjUiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNjAgMTEwIEw2MCA3MCBNNjAgODAgTDQwIDU1IE02MCA4MCBMODAgNTUgTTYwIDcwIEw1MCA0MCBNNjAgNzAgTDcwIDQwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+PC9zdmc+",
+                        src: "/logo-icon.svg",
                         x: undefined,
                         y: undefined,
-                        height: 64,
-                        width: 64,
+                        height: 54,
+                        width: 54,
                         excavate: true,
                       }}
                     />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, Lock, ArrowRight, User, Loader2, Eye, EyeOff, ArrowLeft, Sparkles } from 'lucide-react';
+import { Mail, Lock, ArrowRight, User, Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { auth, db } from '../config/firebase';
 import { 
   createUserWithEmailAndPassword, 
@@ -85,9 +85,9 @@ const AuthPage = () => {
 
         await setDoc(userDocRef, userData);
         if (referredBy) localStorage.removeItem('referred_by');
-        toast.success('Account created with Google!');
+        toast.success('Account created with Google!', { duration: 2000 });
       } else {
-        toast.success('Signed in with Google!');
+        toast.success('Signed in with Google!', { duration: 2000 });
       }
 
       navigate('/dashboard', { replace: true });
@@ -150,13 +150,14 @@ const AuthPage = () => {
         // Clear referral from storage
         if (referredBy) localStorage.removeItem('referred_by');
 
-        toast.success('Account created successfully!');
+        toast.success('Account created successfully!', { duration: 2000 });
         navigate('/dashboard', { replace: true });
       } else if (mode === 'login') {
         // Login
         await signInWithEmailAndPassword(auth, email, password);
-        toast.success('Logged in successfully!');
+        toast.success('Logged in successfully!', { duration: 2000 });
         navigate('/dashboard', { replace: true });
+
       } else if (mode === 'forgot-password') {
         // Forgot Password
         await sendPasswordResetEmail(auth, email);
@@ -211,7 +212,7 @@ const AuthPage = () => {
             <img 
               src="/logo-icon.svg" 
               alt="Aura Tree Logo" 
-              className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(123,97,255,0.3)] invert dark:invert-0 transition-all duration-300" 
+              className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(123,97,255,0.3)] transition-all duration-300" 
             />
           </div>
           <span className="font-display font-bold text-lg sm:text-xl text-aura-text group-hover:text-aura-violet transition-colors">
@@ -233,12 +234,11 @@ const AuthPage = () => {
           )}
 
           <div className="flex flex-col items-center -mt-8 mb-4 text-center">
-            {/* EVEN LARGER CENTRAL LOGO */}
-            <div className="w-64 h-64 sm:w-96 sm:h-96 -mb-20 sm:-mb-32 animate-float pointer-events-none">
+            <div className="w-64 h-64 sm:w-96 sm:h-96 -mb-20 sm:-mb-32 animate-float pointer-events-none flex items-center justify-center">
               <img 
                 src="/logo-icon.svg" 
                 alt="Aura Tree" 
-                className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(123,97,255,1)] invert dark:invert-0 transition-all duration-300" 
+                className="w-full h-full object-contain drop-shadow-[0_0_50px_rgba(123,97,255,1)] transition-all duration-300" 
               />
             </div>
             

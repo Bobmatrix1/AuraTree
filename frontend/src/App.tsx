@@ -59,6 +59,7 @@ const AppContent = () => {
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const lenisRef = useRef<Lenis | null>(null);
@@ -155,7 +156,7 @@ const AppContent = () => {
             <Pricing user={user} onPlanClick={(planName) => {
               if (user) {
                 if (planName.toLowerCase() === 'starter') {
-                  navigate('/dashboard');
+                  navigate('/dashboard?tab=links');
                 } else {
                   navigate(`/checkout?plan=${planName}`);
                 }
@@ -163,7 +164,10 @@ const AppContent = () => {
                 setIsAuthOpen(true);
               }
             }} />
-            <SocialProof />
+            <SocialProof user={user} onReviewClick={() => {
+              if (user) setShowReview(true);
+              else setIsAuthOpen(true);
+            }} />
             <FAQ />
             <FinalCTA user={user} onAuthClick={() => setIsAuthOpen(true)} onCompareClick={() => setShowCompare(true)} />
             <Footer onContactOpenChange={() => setIsContactOpen(true)} />
@@ -184,6 +188,7 @@ const AppContent = () => {
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
       <ComparePlansModal isOpen={showCompare} onClose={() => setShowCompare(false)} />
+      <ReviewModal isOpen={showReview} onClose={() => setShowReview(false)} />
       
       {/* Contact Sheet */}
       <Sheet open={isContactOpen} onOpenChange={setIsContactOpen}>
@@ -260,6 +265,8 @@ const AppContent = () => {
 
       <Toaster 
         position="bottom-right"
+        duration={2000}
+        richColors
         toastOptions={{
           style: {
             background: 'rgba(7, 9, 19, 0.8)',

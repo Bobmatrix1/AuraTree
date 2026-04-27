@@ -153,10 +153,10 @@ const THEMES = [
 ];
 
 const Dashboard = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') as any;
   const [activeTab, setActiveTab] = useState<'links' | 'appearance' | 'analytics' | 'affiliate' | 'settings' | 'team'>(
-    ['links', 'appearance', 'analytics', 'affiliate', 'settings', 'team'].includes(initialTab) ? initialTab : 'links'
+    (initialTab && ['links', 'appearance', 'analytics', 'affiliate', 'settings', 'team'].includes(initialTab)) ? initialTab : 'links'
   );
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<any>(null);
@@ -233,6 +233,16 @@ const Dashboard = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   
   const navigate = useNavigate();
+
+  // Clean up URL tab param after initial load
+  useEffect(() => {
+    if (searchParams.has('tab')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('tab');
+      // Use replace:true to not add to history
+      navigate(`/dashboard?${newParams.toString()}`, { replace: true });
+    }
+  }, []);
 
   // Automatic Payment Verification
   useEffect(() => {
@@ -1128,6 +1138,7 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     await auth.signOut();
+    toast.success('Logged out successfully', { duration: 2000 });
     window.location.href = '/';
   };
 
