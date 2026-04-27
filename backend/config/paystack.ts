@@ -57,6 +57,7 @@ export const initializeTransaction = async (
       amount: totalAmount, 
       metadata,
       callback_url: `${process.env.FRONTEND_URL || defaultUrl}/dashboard?tab=settings`,
+      channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
     };
 
     if (plan) {
