@@ -49,12 +49,9 @@ export const initializeTransaction = async (
     const isProduction = process.env.NODE_ENV === 'production';
     const defaultUrl = isProduction ? 'https://auratree.site' : 'http://localhost:5175';
     
-    const VAT_FEE = 2000; // 20 Naira in kobo
-    const totalAmount = amount + VAT_FEE;
-
     const body: any = {
       email,
-      amount: totalAmount, 
+      amount: amount, 
       metadata,
       callback_url: `${process.env.FRONTEND_URL || defaultUrl}/dashboard?tab=settings`,
       channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],

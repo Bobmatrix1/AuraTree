@@ -101,7 +101,8 @@ export const initializePayment = asyncHandler(async (req: Request, res: Response
   const settings = await getSystemSettings();
   
   const isPro = plan.toLowerCase() === 'pro';
-  const planAmount = isPro ? settings.proPrice * 100 : settings.teamsPrice * 100; // convert to kobo
+  const VAT_FEE = 2000; // 20 Naira in kobo
+  const planAmount = (isPro ? settings.proPrice * 100 : settings.teamsPrice * 100) + VAT_FEE; 
   const planName = isPro ? 'Pro' : 'Teams';
 
   // Get or Create Paystack Plan
